@@ -47,13 +47,13 @@ prettify [options] file_path_filter
 prettify --backup BACKUP_FOLDER/ \"*.php\"
 ```
 
-Prettifies all PHP files after having stored the unprocessed files in the "BACKUP_FOLDER/" folder.
+Prettifies all PHP files after having stored the unprocessed files in "BACKUP_FOLDER/".
 
 ```bash
 prettify --output OUTPUT_FOLDER/ \"*.js\"
 ```
 
-Prettifies all JavaScript files and store the processed files in the "OUTPUT_FOLDER/" folder.
+Prettifies all JavaScript files and store the processed files in "OUTPUT_FOLDER/".
 
 ## Version
 
