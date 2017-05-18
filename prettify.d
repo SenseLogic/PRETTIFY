@@ -2355,7 +2355,7 @@ class CODE
 
     // ~~
 
-    string GetProcessedFileText(
+    string GetFixedFileText(
         string file_text,
         string file_path
         )
@@ -2400,7 +2400,7 @@ void Abort(
 
 // ~~
 
-void ProcessFile(
+void FixFile(
     string file_path
     )
 {
@@ -2425,7 +2425,7 @@ void ProcessFile(
         backup_file_path.write( file_text );
     }
 
-    file_text = code.GetProcessedFileText( file_text, file_path );
+    file_text = code.GetFixedFileText( file_text, file_path );
 
     if ( ItHasOutputFolder )
     {
@@ -2439,17 +2439,17 @@ void ProcessFile(
 
 // ~~
 
-void ProcessFiles(
+void FixFiles(
     string file_path_filter
     )
 {
-    writeln( "Processing files : ", file_path_filter );
+    writeln( "Fixing files : ", file_path_filter );
 
     foreach ( folder_entry; dirEntries( file_path_filter.dirName(), file_path_filter.baseName(), SpanMode.shallow ) )
     {
         if ( folder_entry.isFile() )
         {
-            ProcessFile( folder_entry.name() );
+            FixFile( folder_entry.name() );
         }
     }
 }
@@ -2509,7 +2509,7 @@ void main(
     {
         file_path_filter = argument_array[ 0 ];
 
-        ProcessFiles( file_path_filter );
+        FixFiles( file_path_filter );
     }
     else
     {

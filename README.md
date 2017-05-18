@@ -4,19 +4,12 @@ Source code prettifier.
 
 ## Features
 
-* Supports the following languages : HTML, CSS, C/C++, JavaScript, PHP.
-
-## File extensions
-
-The programming language is recognized from the following file extensions :
-
-```
-HTML : html, htm, xml, twig
-CSS : css, less, pepss, sass, scss, styl
-C/C++ : c, h, cxx, hxx, cpp, hpp, gp, gpp
-JavaScript : js, json
-PHP : php
-```
+* Supports the following file extensions :
+  * HTML : html, htm, xml, twig.
+  * CSS : css, less, pepss, sass, scss, styl.
+  * C/C++ : c, h, cxx, hxx, cpp, hpp.
+  * JavaScript : js, json.
+  * PHP : php.
 
 ## Installation
 
@@ -37,8 +30,8 @@ prettify [options] file_path_filter
 ### Options
 
 ```bash
---backup BACKUP_FOLDER/ : store the unprocessed files in this folder
---output OUTPUT_FOLDER/ : store the processed files in this folder
+--backup BACKUP_FOLDER/ : store the original files in this folder
+--output OUTPUT_FOLDER/ : store the fixed files in this folder
 ```
 
 ### Example
@@ -47,13 +40,13 @@ prettify [options] file_path_filter
 prettify --backup BACKUP_FOLDER/ \"*.php\"
 ```
 
-Prettifies all PHP files after having stored the unprocessed files in "BACKUP_FOLDER/".
+Prettifies all PHP files after having stored the original files in "BACKUP_FOLDER/".
 
 ```bash
 prettify --output OUTPUT_FOLDER/ \"*.js\"
 ```
 
-Prettifies all JavaScript files and store the processed files in "OUTPUT_FOLDER/".
+Prettifies all JavaScript files and store the fixed files in "OUTPUT_FOLDER/".
 
 ## Version
 
