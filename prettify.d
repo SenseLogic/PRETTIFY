@@ -1663,6 +1663,7 @@ class CODE
                                     || ( next_token.Type == TOKEN_TYPE.BeginClosingTag
                                          && !BeginsClosingTag( token_index + 1, inlined_tag_name_array ) ) ) )
                           || ( ( token.LanguageType >= LANGUAGE_TYPE.Css
+                                 && token.LanguageType != LANGUAGE_TYPE.D
                                  && token.LanguageType < LANGUAGE_TYPE.Php )
                                && token.Type == TOKEN_TYPE.Separator
                                && ( token.Text == "{"
@@ -1770,11 +1771,11 @@ class CODE
                      || ( token.Text.startsWith( "#define" )
                           && IsGpFileExtension() ) )
                 {
-                    token.BeginsBlock= true;
+                    token.BeginsBlock = true;
                 }
                 else if ( token.Text.startsWith( "#end" ) )
                 {
-                    token.EndsBlock= true;
+                    token.EndsBlock = true;
                 }
 
                 if ( prior_token is null
@@ -2229,7 +2230,9 @@ class CODE
                                 next_token.BaseColumnOffset = 4;
                             }
 
-                            if ( token.BeginsLine )
+                            if ( token.BeginsLine
+                                 || ( prior_token !is null
+                                      && prior_token.Type != TOKEN_TYPE.Identifier ) )
                             {
                                 base_indentation_type = INDENTATION_TYPE.SameColumn;
                             }
@@ -2402,7 +2405,7 @@ void Abort(
     )
 {
     PrintError( message );
-    
+
     exit( -1 );
 }
 
@@ -2476,7 +2479,7 @@ void main(
 
     ItHasBackupFolder = false;
     BackupFolderPath = "";
-    
+
     ItHasOutputFolder = false;
     OutputFolderPath = "";
 
@@ -2486,7 +2489,7 @@ void main(
             && argument_array[ 0 ].startsWith( "--" ) )
     {
         option = argument_array[ 0 ];
-        
+
         argument_array = argument_array[ 1 .. $ ];
 
         if ( option == "--backup"
@@ -2495,7 +2498,7 @@ void main(
         {
             ItHasBackupFolder = true;
             BackupFolderPath = argument_array[ 0 ];
-            
+
             argument_array = argument_array[ 1 .. $ ];
         }
         else if ( option == "--output"
@@ -2504,10 +2507,10 @@ void main(
         {
             ItHasOutputFolder = true;
             OutputFolderPath = argument_array[ 0 ];
-            
+
             argument_array = argument_array[ 1 .. $ ];
         }
-        else 
+        else
         {
             Abort( "Invalid option : " ~ option );
         }
@@ -2529,7 +2532,7 @@ void main(
         writeln( "Example :" );
         writeln( "    prettify --backup BACKUP_FOLDER/ \"*.php\"" );
         writeln( "    prettify --output OUTPUT_FOLDER/ \"*.js\"" );
-        
+
         Abort( "Invalid arguments : " ~ argument_array.to!string() );
     }
 }
