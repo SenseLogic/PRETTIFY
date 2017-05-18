@@ -45,6 +45,7 @@ enum LANGUAGE_TYPE
     Html,
     Css,
     Cpp,
+    D,
     Gs,
     Js,
     Php
@@ -261,119 +262,123 @@ class CODE
     // -- INQUIRIES
 
     bool IsHtmlFileExtension(
-        string file_extension
         )
     {
         return (
-            file_extension == ".html"
-            || file_extension == ".htm"
-            || file_extension == ".xml"
-            || file_extension == ".twig"
+            FileExtension == ".html"
+            || FileExtension == ".htm"
+            || FileExtension == ".xml"
+            || FileExtension == ".twig"
             );
     }
 
     // ~~
 
     bool IsCssFileExtension(
-        string file_extension
         )
     {
         return (
-            file_extension == ".css"
-            || file_extension == ".less"
-            || file_extension == ".pepss"
-            || file_extension == ".sass"
-            || file_extension == ".scss"
-            || file_extension == ".styl"
+            FileExtension == ".css"
+            || FileExtension == ".less"
+            || FileExtension == ".pepss"
+            || FileExtension == ".sass"
+            || FileExtension == ".scss"
+            || FileExtension == ".styl"
             );
     }
 
     // ~~
 
     bool IsGpFileExtension(
-        string file_extension
         )
     {
         return (
-            file_extension == ".gp"
-            || file_extension == ".gpp"
+            FileExtension == ".gp"
+            || FileExtension == ".gpp"
             );
     }
 
     // ~~
 
     bool IsCppFileExtension(
-        string file_extension
         )
     {
         return (
-            file_extension == ".c"
-            || file_extension == ".h"
-            || file_extension == ".cxx"
-            || file_extension == ".hxx"
-            || file_extension == ".cpp"
-            || file_extension == ".hpp"
-            || IsGpFileExtension( file_extension )
+            FileExtension == ".c"
+            || FileExtension == ".h"
+            || FileExtension == ".cxx"
+            || FileExtension == ".hxx"
+            || FileExtension == ".cpp"
+            || FileExtension == ".hpp"
+            || IsGpFileExtension()
             );
     }
 
     // ~~
 
-    bool IsGsFileExtension(
-        string file_extension
+    bool IsDFileExtension(
         )
     {
-        return file_extension == ".gs";
+        return FileExtension == ".d";
+    }
+
+    // ~~
+
+    bool IsGsFileExtension(
+        )
+    {
+        return FileExtension == ".gs";
     }
 
     // ~~
 
     bool IsJsFileExtension(
-        string file_extension
         )
     {
         return (
-            file_extension == ".js"
-            || file_extension == ".json"
+            FileExtension == ".js"
+            || FileExtension == ".json"
             );
     }
 
     // ~~
 
     bool IsPhpFileExtension(
-        string file_extension
         )
     {
-        return file_extension == ".php";
+        return FileExtension == ".php";
     }
 
     // ~~
 
     LANGUAGE_TYPE GetFileLanguageType(
-        string file_extension
         )
     {
-        if ( IsHtmlFileExtension( file_extension ) )
+        if ( IsHtmlFileExtension() )
         {
             return LANGUAGE_TYPE.Html;
         }
-        else if ( IsCssFileExtension( file_extension ) )
+        else if ( IsCssFileExtension() )
         {
             return LANGUAGE_TYPE.Css;
         }
-        else if ( IsCppFileExtension( file_extension ) )
+        else if ( IsCppFileExtension() )
         {
             return LANGUAGE_TYPE.Cpp;
         }
-        else if ( IsGsFileExtension( file_extension ) )
+        else if ( IsDFileExtension() )
+        {
+            return LANGUAGE_TYPE.D;
+        }
+        else if ( IsGsFileExtension() )
         {
             return LANGUAGE_TYPE.Gs;
         }
-        else if ( IsJsFileExtension( file_extension ) )
+        else if ( IsJsFileExtension() )
         {
             return LANGUAGE_TYPE.Js;
         }
-        else if ( IsPhpFileExtension( file_extension ) )
+        else if ( IsPhpFileExtension() )
         {
             return LANGUAGE_TYPE.Php;
         }
@@ -649,7 +654,7 @@ class CODE
         file_text = file_text.replace( "\t", "    " ).replace( "\r", "" );
 
         FileExtension = ( file_path.indexOf( "." ) >= 0 ) ? file_path.extension() : "";
-        FileLanguageType = GetFileLanguageType( FileExtension );
+        FileLanguageType = GetFileLanguageType();
         LineCharacterIndex = 0;
         LineIndex = 0;
         TokenArray = [];
@@ -1763,7 +1768,7 @@ class CODE
             {
                 if ( token.Text.startsWith( "#if" )
                      || ( token.Text.startsWith( "#define" )
-                          && IsGpFileExtension( FileExtension ) ) )
+                          && IsGpFileExtension() ) )
                 {
                     token.BeginsBlock= true;
                 }
@@ -2020,9 +2025,11 @@ class CODE
                                       && ( token.Text != ">" || token.LanguageType != LANGUAGE_TYPE.Cpp )
                                       && !( ( ( token.Text == "&"
                                                 && ( token.LanguageType == LANGUAGE_TYPE.Cpp
+                                                     || token.LanguageType == LANGUAGE_TYPE.D
                                                      || token.LanguageType == LANGUAGE_TYPE.Php ) )
                                               || ( token.Text == "*"
-                                                   && token.LanguageType == LANGUAGE_TYPE.Cpp )
+                                                   && ( token.LanguageType == LANGUAGE_TYPE.Cpp
+                                                        || token.LanguageType == LANGUAGE_TYPE.D ) )
                                               || ( ( token.Text == "?"
                                                      || token.Text == "@" )
                                                    && token.LanguageType == LANGUAGE_TYPE.Gs ) )
@@ -2037,7 +2044,8 @@ class CODE
                                          && next_token.Text != "::"
                                          && next_token.Text != "->"
                                          && ( next_token.Text != "<" || token.LanguageType != LANGUAGE_TYPE.Cpp )
-                                         && ( next_token.Text != ">" || token.LanguageType != LANGUAGE_TYPE.Cpp ) )
+                                         && ( next_token.Text != ">" || token.LanguageType != LANGUAGE_TYPE.Cpp )
+                                         && ( next_token.Text != "!" || token.LanguageType != LANGUAGE_TYPE.D ) )
                                     || ( token.Type == TOKEN_TYPE.Operator
                                          && next_token.Type == TOKEN_TYPE.Operator ) ) ) )
                 {

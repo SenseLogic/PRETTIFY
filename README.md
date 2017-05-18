@@ -4,12 +4,14 @@ Source code prettifier.
 
 ## Features
 
-* Supports the following file extensions :
+* Prettifies source code files with the following extensions :
+  * PHP : php.
   * HTML : html, htm, xml, twig.
   * CSS : css, less, pepss, sass, scss, styl.
-  * C/C++ : c, h, cxx, hxx, cpp, hpp.
   * JavaScript : js, json.
-  * PHP : php.
+  * C : c, h.
+  * C++ : cxx, hxx, cpp, hpp.
+  * D : d.
 
 ## Installation
 
