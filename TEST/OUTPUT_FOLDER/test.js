@@ -261,7 +261,7 @@ var LANGUAGE_TYPE_NameTable =
 
 var x = 123.345345e-10;
 var y = text
-    .split( 'x' )
-    .join( 'X' )
-    .split( 'x' ).join( 'X' )
-    .split( 'y' ).join( 'Y' );
+            .split( 'x' )
+            .join( 'X' )
+            .split( 'x' ).join( 'X' )
+                         .split( 'y' ).join( 'Y' );

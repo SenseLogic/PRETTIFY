@@ -1521,11 +1521,18 @@ class CODE
                                 return -1;
                             }
                         }
-                        else if ( token.BeginsLine
+                        else if ( level == 0
                                   && ( token.Type < TOKEN_TYPE.BeginShortComment
-                                       || token.Type > TOKEN_TYPE.EndLongComment )
-                                  && level == 0 )
+                                       || token.Type > TOKEN_TYPE.EndLongComment ) )
                         {
+                            if ( token.Type == TOKEN_TYPE.Identifier
+                                 && token_index > 0
+                                 && TokenArray[ token_index - 1 ].Type == TOKEN_TYPE.Separator
+                                 && TokenArray[ token_index - 1 ].Text == "." )
+                            {
+                                return token_index - 1;
+                            }
+
                             return token_index;
                         }
                     }
@@ -2231,8 +2238,7 @@ class CODE
                             }
 
                             if ( token.BeginsLine
-                                 || ( prior_token !is null
-                                      && prior_token.Type != TOKEN_TYPE.Identifier ) )
+                                 || token.PriorSpaceCount > 0 )
                             {
                                 base_indentation_type = INDENTATION_TYPE.SameColumn;
                             }
