@@ -157,6 +157,40 @@ class TOKEN
         EndsBlock = false;
         IsIndented = false;
     }
+
+    // ~~
+
+    string GetDump(
+        )
+    {
+        return
+            Text ~ "\n    "
+            ~ LanguageType.to!string() ~ " "
+            ~ Type.to!string() ~ "\n    "
+            ~ "L:" ~ LineIndex.to!string() ~ " "
+            ~ "C:" ~ ColumnIndex.to!string() ~ " "
+            ~ "Ps:" ~ PriorSpaceCount.to!string() ~ " "
+            ~ "Tl:" ~ Text.length.to!string() ~ " "
+            ~ "Bc:" ~ BaseColumnIndex.to!string() ~ " "
+            ~ "Bt:" ~ ( ( BaseTokenIndex == -1 ) ? "-" : BaseTokenIndex.to!string() ) ~ " "
+            ~ "Bo:" ~ BaseColumnOffset.to!string() ~ " "
+            ~ ( BeginsLine ? "[" : "" )
+            ~ ( EndsLine ? "]" : "" )
+            ~ ( BeginsStatement ? "(" : "" )
+            ~ ( EndsStatement ? ")" : "" )
+            ~ ( BeginsBlock ? "{" : "" )
+            ~ ( EndsBlock ? "}" : "" )
+            ~ ( IsIndented ? "^" : "" )
+            ~ "\n";
+    }
+
+    // ~~
+
+    void Dump(
+        )
+    {
+        writeln( GetDump() );
+    }
 }
 
 // .. CONTEXT
@@ -544,20 +578,9 @@ class CODE
         token = TokenArray[ token_index ];
 
         return
-            token_index.to!string() ~ " " ~ token.Text ~ "\n            "
-            ~ token.LanguageType.to!string() ~ " "
-            ~ token.Type.to!string() ~ "\n            "
-            ~ "L:" ~ token.LineIndex.to!string() ~ " "
-            ~ "Bc:" ~ token.BaseColumnIndex.to!string() ~ " "
-            ~ "Bt:" ~ ( ( token.BaseTokenIndex == -1 ) ? "-" : token.BaseTokenIndex.to!string() ) ~ " "
-            ~ "Bo:" ~ token.BaseColumnOffset.to!string() ~ " "
-            ~ ( token.BeginsLine ? "[" : "" )
-            ~ ( token.EndsLine ? "]" : "" )
-            ~ ( token.BeginsStatement ? "(" : "" )
-            ~ ( token.EndsStatement ? ")" : "" )
-            ~ ( token.BeginsBlock ? "{" : "" )
-            ~ ( token.EndsBlock ? "}" : "" )
-            ~ ( token.IsIndented ? "^" : "" )
+            token_index.to!string()
+            ~ " "
+            ~ token.GetDump()
             ~ "\n";
     }
 
@@ -623,6 +646,39 @@ class CODE
     {
         Token = null;
         Context.TokenType = TOKEN_TYPE.None;
+    }
+
+    // ~~
+
+    void SetPriorSpaceCount(
+        )
+    {
+        int
+            token_index;
+        TOKEN
+            prior_token,
+            token;
+
+        prior_token = null;
+
+        for ( token_index = 0;
+              token_index < TokenArray.length;
+              ++token_index )
+        {
+            token = TokenArray[ token_index ];
+
+            if ( token_index == 0
+                 || token.LineIndex > prior_token.LineIndex )
+            {
+                token.PriorSpaceCount = token.ColumnIndex;
+            }
+            else
+            {
+                token.PriorSpaceCount = token.ColumnIndex - prior_token.ColumnIndex - prior_token.Text.length.to!int();
+            }
+
+            prior_token = token;
+        }
     }
 
     // ~~
@@ -1266,6 +1322,8 @@ class CODE
             }
         }
 
+        SetPriorSpaceCount();
+
         return true;
     }
 
@@ -1543,37 +1601,6 @@ class CODE
         }
 
         return -1;
-    }
-
-    // ~~
-
-    void SetPriorSpaceCount(
-        )
-    {
-        int
-            token_index;
-        TOKEN
-            prior_token,
-            token;
-
-        prior_token = null;
-
-        for ( token_index = 0;
-              token_index < TokenArray.length;
-              ++token_index )
-        {
-            token = TokenArray[ token_index ];
-
-            token.BeginsLine = ( token_index == 0 || token.LineIndex > prior_token.LineIndex );
-            token.PriorSpaceCount = token.ColumnIndex;
-
-            if ( !token.BeginsLine )
-            {
-                token.PriorSpaceCount -= prior_token.ColumnIndex + prior_token.Text.length;
-            }
-
-            prior_token = token;
-        }
     }
 
     // ~~
@@ -2238,7 +2265,8 @@ class CODE
                             }
 
                             if ( token.BeginsLine
-                                 || token.PriorSpaceCount > 0 )
+                                 || ( token.PriorSpaceCount > 0
+                                      && prior_token.Type != TOKEN_TYPE.Identifier ) )
                             {
                                 base_indentation_type = INDENTATION_TYPE.SameColumn;
                             }

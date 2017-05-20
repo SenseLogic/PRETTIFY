@@ -9,7 +9,7 @@ window.onload = function()
             {
                 return this.nodeType == 3 && this.nodeValue.match( /^s*$/ );
             }
-            )
+               )
         .remove();
 
     Crafty.init( 600, 300 );
@@ -30,7 +30,7 @@ window.onload = function()
                           w : 10,
                           h : 100
                       }
-                      )
+                       )
                   .multiway( 4,
                              {
                                  Q : -90,
@@ -47,14 +47,14 @@ window.onload = function()
                           w : 10,
                           h : 100
                       }
-                      )
+                       )
                   .multiway(
                       4,
                       {
                           UP_ARROW : -90,
                           DOWN_ARROW : 90
                       }
-                      );
+                           );
 
             // Ball
 
@@ -69,7 +69,7 @@ window.onload = function()
                           dX : Crafty.math.randomInt( 2, 5 ),
                           dY : Crafty.math.randomInt( 2, 5 )
                       }
-                      )
+                       )
                   .bind(
                       'EnterFrame',
                       function()
@@ -102,28 +102,28 @@ window.onload = function()
                           this.x += this.dX;
                           this.y += this.dY;
                       }
-                      )
+                       )
                   .onHit(
                       'Paddle',
                       function()
                       {
                           this.dX *= -1;
                       }
-                      )
+                        )
 
-                      // Score boards
+                        // Score boards
 
-                      Crafty.e( "LeftPoints, DOM, 2D, Text" )
-                            .attr(
-                                {
-                                    x : 20,
-                                    y : 20,
-                                    w : 100,
-                                    h : 20,
-                                    points : 0
-                                }
-                                )
-                            .text( "0 Points" );
+                        Crafty.e( "LeftPoints, DOM, 2D, Text" )
+                              .attr(
+                                  {
+                                      x : 20,
+                                      y : 20,
+                                      w : 100,
+                                      h : 20,
+                                      points : 0
+                                  }
+                                   )
+                              .text( "0 Points" );
 
             Crafty.e( "RightPoints, DOM, 2D, Text" )
                   .attr(
@@ -134,10 +134,10 @@ window.onload = function()
                           h : 20,
                           points : 0
                       }
-                      )
+                       )
                   .text( "0 Points" );
         }
-        );
+                );
 
     Crafty.e( "2D, DOM, Text" ).attr(
         {
@@ -145,7 +145,7 @@ window.onload = function()
             y : 130,
             w : 300
         }
-        ).text( "Click to play..." );
+                                    ).text( "Click to play..." );
 
     Crafty.e( "2D, DOM, Mouse" )
           .attr(
@@ -155,13 +155,13 @@ window.onload = function()
                   h : 300,
                   w : 600
               }
-              ).bind(
-                  "Click",
-                  function()
-                  {
-                      Crafty.scene( "game" );
-                  }
-                  );
+               ).bind(
+                   "Click",
+                   function()
+                   {
+                       Crafty.scene( "game" );
+                   }
+                     );
 }
 
 function SetTimer()
@@ -175,7 +175,7 @@ function SetTimer()
                     Next();
                 },
                 1000
-                );
+                       );
     }
 }
 
@@ -245,9 +245,9 @@ define(
                     key : "Ctrl-Alt-S", platform : "mac"
                 }
             ]
-            );
+                        );
     }
-    );
+      );
 
 var LANGUAGE_TYPE_NameTable =
     [

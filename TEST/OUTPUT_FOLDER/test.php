@@ -106,9 +106,9 @@
                         {
                             alert( "You entered p1!" );
                         }
-                        );
+                                         );
                 }
-                );
+                               );
 
             $( "input" )
                 .focus(
@@ -116,13 +116,13 @@
                     {
                         $( this ).css( "background-color", "#cccccc" );
                     }
-                    )
+                      )
                 .blur(
                     function()
                     {
                         $( this ).css( "background-color", "#ffffff" );
                     }
-                    );
+                     );
         </script>
     </head>
     <body>
