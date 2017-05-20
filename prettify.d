@@ -298,12 +298,11 @@ class CODE
     bool IsHtmlFileExtension(
         )
     {
-        return (
+        return
             FileExtension == ".html"
             || FileExtension == ".htm"
             || FileExtension == ".xml"
-            || FileExtension == ".twig"
-            );
+            || FileExtension == ".twig";
     }
 
     // ~~
@@ -311,14 +310,13 @@ class CODE
     bool IsCssFileExtension(
         )
     {
-        return (
+        return
             FileExtension == ".css"
             || FileExtension == ".less"
             || FileExtension == ".pepss"
             || FileExtension == ".sass"
             || FileExtension == ".scss"
-            || FileExtension == ".styl"
-            );
+            || FileExtension == ".styl";
     }
 
     // ~~
@@ -326,10 +324,9 @@ class CODE
     bool IsGpFileExtension(
         )
     {
-        return (
+        return
             FileExtension == ".gp"
-            || FileExtension == ".gpp"
-            );
+            || FileExtension == ".gpp";
     }
 
     // ~~
@@ -337,15 +334,14 @@ class CODE
     bool IsCppFileExtension(
         )
     {
-        return (
+        return
             FileExtension == ".c"
             || FileExtension == ".h"
             || FileExtension == ".cxx"
             || FileExtension == ".hxx"
             || FileExtension == ".cpp"
             || FileExtension == ".hpp"
-            || IsGpFileExtension()
-            );
+            || IsGpFileExtension();
     }
 
     // ~~
@@ -369,10 +365,9 @@ class CODE
     bool IsJsFileExtension(
         )
     {
-        return (
+        return
             FileExtension == ".js"
-            || FileExtension == ".json"
-            );
+            || FileExtension == ".json";
     }
 
     // ~~
@@ -428,10 +423,9 @@ class CODE
         char character
         )
     {
-        return (
+        return
             ( character >= 'a' && character <= 'z' )
-            || ( character >= 'A' && character <= 'Z' )
-            );
+            || ( character >= 'A' && character <= 'Z' );
     }
 
     // ~~
@@ -442,7 +436,7 @@ class CODE
         char next_character
         )
     {
-        return (
+        return
             ( character >= '0' && character <= '9' )
             || ( character >= 'a' && character <= 'z' )
             || ( character >= 'A' && character <= 'Z' )
@@ -450,8 +444,7 @@ class CODE
                  && prior_character >= '0' && prior_character <= '9'
                  && next_character >= '0' && next_character <= '9' )
             || ( character == '-'
-                 && ( prior_character == 'e' || prior_character == 'E' ) )
-            );
+                 && ( prior_character == 'e' || prior_character == 'E' ) );
     }
 
     // ~~
@@ -460,13 +453,12 @@ class CODE
         char character
         )
     {
-        return (
+        return
             ( character >= 'a' && character <= 'z' )
             || ( character >= 'A' && character <= 'Z' )
             || ( character >= '0' && character <= '9' )
             || character == '_'
-            || character == '$'
-            );
+            || character == '$';
     }
 
     // ~~
@@ -475,7 +467,7 @@ class CODE
         char character
         )
     {
-        return (
+        return
             character == '{'
             || character == '}'
             || character == '['
@@ -485,8 +477,7 @@ class CODE
             || character == ';'
             || character == ','
             || character == '.'
-            || character == ':'
-            );
+            || character == ':';
     }
 
     // ~~
@@ -495,7 +486,7 @@ class CODE
         char character
         )
     {
-        return (
+        return
             character == '='
             || character == '+'
             || character == '-'
@@ -511,8 +502,7 @@ class CODE
             || character == '!'
             || character == '?'
             || character == '@'
-            || character == '#'
-            );
+            || character == '#';
     }
 
     // ~~
@@ -530,12 +520,11 @@ class CODE
         {
             token = TokenArray[ TokenArray.length - 1 ];
 
-            return (
+            return
                 ( token.Type == TOKEN_TYPE.Separator
                   && token.Text != "]"
                   && token.Text != ")" )
-                || token.Type == TOKEN_TYPE.Operator
-                );
+                || token.Type == TOKEN_TYPE.Operator;
         }
     }
 
@@ -1334,11 +1323,10 @@ class CODE
         string[] tag_name_array
         )
     {
-        return (
+        return
             TokenArray[ token_index ].Type == TOKEN_TYPE.BeginOpeningTag
             && token_index + 1 < TokenArray.length
-            && tag_name_array.countUntil( TokenArray[ token_index + 1 ].Text ) >= 0
-            );
+            && tag_name_array.countUntil( TokenArray[ token_index + 1 ].Text ) >= 0;
     }
 
     // ~~
@@ -1348,11 +1336,10 @@ class CODE
         string[] tag_name_array
         )
     {
-        return (
+        return
             TokenArray[ token_index ].Type == TOKEN_TYPE.BeginClosingTag
             && token_index + 1 < TokenArray.length
-            && tag_name_array.countUntil( TokenArray[ token_index + 1 ].Text ) >= 0
-            );
+            && tag_name_array.countUntil( TokenArray[ token_index + 1 ].Text ) >= 0;
     }
 
     // ~~
