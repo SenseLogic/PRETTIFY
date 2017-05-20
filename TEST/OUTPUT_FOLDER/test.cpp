@@ -20,7 +20,7 @@
             const std::string & id,
             const std::string & title,
             const std::string & text
-               ) :
+            ) :
             _id( id ),
             _title( title ),
             _text( text )
@@ -53,7 +53,7 @@
     inline bool operator==(
         const Article & article,
         const Article & other_article
-                          )
+        )
     {
         return article.id() == other_article.id();
     }
