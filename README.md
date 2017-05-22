@@ -20,7 +20,7 @@ Install the [DMD 2 compiler](https://dlang.org/download.html).
 Build the executable with the following command line :
 
 ```bash
-dmd prettify.d
+dmd -m64 prettify.d
 ```
 
 ## Command line
