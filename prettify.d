@@ -115,7 +115,7 @@ class TOKEN
         LanguageType;
     TOKEN_TYPE
         Type;
-    int
+    long
         LineIndex,
         ColumnIndex,
         PriorSpaceCount,
@@ -221,21 +221,21 @@ class BLOCK
 {
     // -- ATTRIBUTES
 
-    int
+    long
         SeparatorTokenIndex,
         BaseTokenIndex;
     INDENTATION_TYPE
         BaseIndentationType;
-    int
+    long
         ColumnIndex;
 
     // -- CONSTRUCTORS
 
     this(
-        int separator_token_index,
-        int base_token_index,
+        long separator_token_index,
+        long base_token_index,
         INDENTATION_TYPE base_indentation_type,
-        int column_index
+        long column_index
         )
     {
         SeparatorTokenIndex = separator_token_index;
@@ -255,7 +255,7 @@ class CODE
         FileExtension;
     LANGUAGE_TYPE
         FileLanguageType;
-    int
+    long
         LineCharacterIndex,
         CharacterIndex,
         LineIndex,
@@ -264,7 +264,7 @@ class CODE
         TokenArray;
     TOKEN
         Token;
-    int
+    long
         TokenIndex;
     bool
         TokenIsSplit;
@@ -532,7 +532,7 @@ class CODE
 
     bool StartsLine(
         string text,
-        int character_index
+        long character_index
         )
     {
         char
@@ -558,7 +558,7 @@ class CODE
     // ~~
 
     string GetTokenDump(
-        int token_index
+        long token_index
         )
     {
         TOKEN
@@ -577,7 +577,7 @@ class CODE
 
     string GetTokenArrayDump()
     {
-        int
+        long
             token_index;
         string
             token_array_dump;
@@ -642,7 +642,7 @@ class CODE
     void SetPriorSpaceCount(
         )
     {
-        int
+        long
             token_index;
         TOKEN
             prior_token,
@@ -663,7 +663,7 @@ class CODE
             }
             else
             {
-                token.PriorSpaceCount = token.ColumnIndex - prior_token.ColumnIndex - prior_token.Text.length.to!int();
+                token.PriorSpaceCount = token.ColumnIndex - prior_token.ColumnIndex - prior_token.Text.length;
             }
 
             prior_token = token;
@@ -688,7 +688,7 @@ class CODE
             character_8,
             character_9,
             prior_character;
-        int
+        long
             character_count,
             closing_tag_token_index,
             element_count,
@@ -724,7 +724,7 @@ class CODE
 
         EndToken();
 
-        character_count = file_text.length.to!int();
+        character_count = file_text.length;
         element_count = 0;
         opening_tag_token_index = -1;
         closing_tag_token_index = -1;
@@ -1089,7 +1089,7 @@ class CODE
                 AddTokenCharacter( character );
                 EndToken();
 
-                opening_tag_token_index = TokenArray.length.to!int();
+                opening_tag_token_index = TokenArray.length;
             }
             else if ( character == '/'
                       && character_2 == '>'
@@ -1136,7 +1136,7 @@ class CODE
                 AddTokenCharacter( character_2 );
                 EndToken();
 
-                closing_tag_token_index = TokenArray.length.to!int();
+                closing_tag_token_index = TokenArray.length;
             }
             else if ( character == '>'
                       && Context.LanguageType == LANGUAGE_TYPE.Html
@@ -1319,7 +1319,7 @@ class CODE
     // ~~
 
     bool BeginsOpeningTag(
-        int token_index,
+        long token_index,
         string[] tag_name_array
         )
     {
@@ -1332,7 +1332,7 @@ class CODE
     // ~~
 
     bool BeginsClosingTag(
-        int token_index,
+        long token_index,
         string[] tag_name_array
         )
     {
@@ -1345,7 +1345,7 @@ class CODE
     // ~~
 
     bool EndsOpeningTag(
-        int token_index,
+        long token_index,
         string[] tag_name_array
         )
     {
@@ -1371,7 +1371,7 @@ class CODE
     // ~~
 
     bool EndsClosingTag(
-        int token_index,
+        long token_index,
         string[] tag_name_array
         )
     {
@@ -1397,7 +1397,7 @@ class CODE
     // ~~
 
     bool ClosesOpeningTag(
-        int token_index,
+        long token_index,
         string[] tag_name_array
         )
     {
@@ -1422,11 +1422,11 @@ class CODE
 
     // ~~
 
-    int GetNextTokenIndex(
-        int token_index
+    long GetNextTokenIndex(
+        long token_index
         )
     {
-        int
+        long
             next_token_index;
         LANGUAGE_TYPE
             language_type;
@@ -1455,10 +1455,10 @@ class CODE
     // ~~
 
     void SetNextStatement(
-        int token_index
+        long token_index
         )
     {
-        int
+        long
             next_token_index;
         TOKEN
             next_token;
@@ -1489,11 +1489,11 @@ class CODE
 
     // ~~
 
-    int FindMatchingSeparatorTokenIndex(
-        int separator_token_index
+    long FindMatchingSeparatorTokenIndex(
+        long separator_token_index
         )
     {
-        int
+        long
             level,
             prior_token_index,
             token_index;
@@ -1595,7 +1595,7 @@ class CODE
     void SetBaseColumnIndex(
         )
     {
-        int
+        long
             token_index;
         TOKEN
             prior_token,
@@ -1623,9 +1623,9 @@ class CODE
     // ~~
 
     void SetTokenText(
-        int token_index,
+        long token_index,
         string token_text,
-        int next_space_count = -1
+        long next_space_count = -1
         )
     {
         TokenArray[ token_index ].Text = token_text;
@@ -1642,7 +1642,7 @@ class CODE
     void AddLines(
         )
     {
-        int
+        long
             line_offset,
             token_index;
         TOKEN
@@ -1711,7 +1711,7 @@ class CODE
     void FindStatements(
         )
     {
-        int
+        long
             line_index,
             token_index;
         TOKEN
@@ -1862,7 +1862,7 @@ class CODE
     void IndentLines(
         )
     {
-        int
+        long
             base_token_index,
             statement_token_index,
             token_index;
@@ -1932,7 +1932,7 @@ class CODE
     void IndentStrings(
         )
     {
-        int
+        long
             next_token_index,
             token_index;
         TOKEN
@@ -1993,7 +1993,7 @@ class CODE
     void AddSpaces(
         )
     {
-        int
+        long
             token_index;
         TOKEN
             next_token,
@@ -2016,7 +2016,7 @@ class CODE
                 if ( next_token.Type == TOKEN_TYPE.BeginShortComment
                      || next_token.Type == TOKEN_TYPE.BeginLongComment )
                 {
-                    next_token.BaseColumnOffset = ( token.Text.length + 4 ).to!int();
+                    next_token.BaseColumnOffset = token.Text.length + 4;
                 }
                 else if ( ( token.Type == TOKEN_TYPE.Separator
                             && ( ( token.Text == "{" && next_token.Text != "}" )
@@ -2071,7 +2071,7 @@ class CODE
                                     || ( token.Type == TOKEN_TYPE.Operator
                                          && next_token.Type == TOKEN_TYPE.Operator ) ) ) )
                 {
-                    next_token.BaseColumnOffset = ( token.Text.length + 1 ).to!int();
+                    next_token.BaseColumnOffset = token.Text.length + 1;
                 }
             }
         }
@@ -2082,7 +2082,7 @@ class CODE
     void IndentBlocks(
         )
     {
-        int
+        long
             base_token_index,
             column_index,
             line_token_index,
@@ -2344,7 +2344,7 @@ class CODE
     string GetFileText(
         )
     {
-        int
+        long
             column_index,
             line_index,
             token_index;
