@@ -39,13 +39,19 @@ prettify [options] file_path_filter
 ### Example
 
 ```bash
-prettify --backup BACKUP_FOLDER/ \"*.php\"
+prettify "*.d"
+```
+
+Prettifies all D files.
+
+```bash
+prettify --backup BACKUP_FOLDER/ "*.php"
 ```
 
 Prettifies all PHP files after having stored the original files in "BACKUP_FOLDER/".
 
 ```bash
-prettify --output OUTPUT_FOLDER/ \"*.js\"
+prettify --output OUTPUT_FOLDER/ "*.js"
 ```
 
 Prettifies all JavaScript files and store the fixed files in "OUTPUT_FOLDER/".
