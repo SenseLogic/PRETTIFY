@@ -1320,7 +1320,7 @@ class CODE
 
     bool BeginsOpeningTag(
         long token_index,
-        string[] tag_name_array
+        ref string[] tag_name_array
         )
     {
         return
@@ -1333,7 +1333,7 @@ class CODE
 
     bool BeginsClosingTag(
         long token_index,
-        string[] tag_name_array
+        ref string[] tag_name_array
         )
     {
         return
@@ -1346,7 +1346,7 @@ class CODE
 
     bool EndsOpeningTag(
         long token_index,
-        string[] tag_name_array
+        ref string[] tag_name_array
         )
     {
         TOKEN
@@ -1372,7 +1372,7 @@ class CODE
 
     bool EndsClosingTag(
         long token_index,
-        string[] tag_name_array
+        ref string[] tag_name_array
         )
     {
         TOKEN
@@ -1398,7 +1398,7 @@ class CODE
 
     bool ClosesOpeningTag(
         long token_index,
-        string[] tag_name_array
+        ref string[] tag_name_array
         )
     {
         TOKEN
