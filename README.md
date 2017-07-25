@@ -58,7 +58,7 @@ Prettifies all JavaScript files and store the fixed files in "OUTPUT_FOLDER/".
 
 ## Version
 
-0.1
+1.0
 
 ## Author
 
