@@ -507,7 +507,7 @@ class CODE
 
     // ~~
 
-    bool IsLastTokenPrecedingRegularExpression()
+    bool IsLastTokenBeforeRegularExpression()
     {
         TOKEN
             token;
@@ -997,7 +997,7 @@ class CODE
             }
             else if ( character == '/'
                       && Context.LanguageType == LANGUAGE_TYPE.Js
-                      && IsLastTokenPrecedingRegularExpression() )
+                      && IsLastTokenBeforeRegularExpression() )
             {
                 BeginToken( TOKEN_TYPE.RegularExpressionLiteral );
                 AddTokenCharacter( character );
