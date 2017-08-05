@@ -2001,7 +2001,7 @@ class CODE
             token;
 
         for ( token_index = 0;
-              token_index < TokenArray.length - 1;
+              token_index + 1 < TokenArray.length;
               ++token_index )
         {
             prior_token = ( token_index > 0 ) ? TokenArray[ token_index - 1 ] : null;
