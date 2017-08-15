@@ -2404,8 +2404,8 @@ class CODE
 // -- VARIABLE
 
 bool
-    ItHasBackupFolder,
-    ItHasOutputFolder;
+    HasBackupFolder,
+    HasOutputFolder;
 string
     BackupFolderPath,
     OutputFolderPath;
@@ -2450,7 +2450,7 @@ void FixFile(
 
     file_text = file_path.readText();
 
-    if ( ItHasBackupFolder )
+    if ( HasBackupFolder )
     {
         backup_file_path = BackupFolderPath ~ file_path.baseName();
 
@@ -2461,7 +2461,7 @@ void FixFile(
 
     file_text = code.GetFixedFileText( file_text, file_path );
 
-    if ( ItHasOutputFolder )
+    if ( HasOutputFolder )
     {
         file_path = OutputFolderPath ~ file_path.baseName();
     }
@@ -2500,10 +2500,10 @@ void main(
         file_path_filter,
         option;
 
-    ItHasBackupFolder = false;
+    HasBackupFolder = false;
     BackupFolderPath = "";
 
-    ItHasOutputFolder = false;
+    HasOutputFolder = false;
     OutputFolderPath = "";
 
     argument_array = argument_array[ 1 .. $ ];
@@ -2519,7 +2519,7 @@ void main(
              && argument_array.length >= 1
              && argument_array[ 0 ].endsWith( '/' ) )
         {
-            ItHasBackupFolder = true;
+            HasBackupFolder = true;
             BackupFolderPath = argument_array[ 0 ];
 
             argument_array = argument_array[ 1 .. $ ];
@@ -2528,7 +2528,7 @@ void main(
                   && argument_array.length >= 1
                   && argument_array[ 0 ].endsWith( '/' ) )
         {
-            ItHasOutputFolder = true;
+            HasOutputFolder = true;
             OutputFolderPath = argument_array[ 0 ];
 
             argument_array = argument_array[ 1 .. $ ];
