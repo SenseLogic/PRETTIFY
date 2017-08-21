@@ -1,3 +1,5 @@
+![](https://github.com/senselogic/PRETTIFY/blob/master/LOGO/prettify.png)
+
 # Prettify
 
 Source code prettifier.
