@@ -38,7 +38,7 @@ prettify [options] file_path_filter
 --output OUTPUT_FOLDER/ : store the fixed files in this folder
 ```
 
-### Example
+### Examples
 
 ```bash
 prettify "*.d"
