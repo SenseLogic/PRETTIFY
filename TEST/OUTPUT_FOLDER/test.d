@@ -29,7 +29,7 @@ bool StartsByVowel(
 {
     return (
         text != ""
-        && IsVowelCharacter( text[ 0 ] )
+             && IsVowelCharacter( text[ 0 ] )
         );
 }
 

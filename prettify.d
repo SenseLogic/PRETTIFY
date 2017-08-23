@@ -157,6 +157,103 @@ class TOKEN
         IsIndented = false;
     }
 
+    // -- INQUIRIES
+
+    long GetPriority(
+        )
+    {
+        switch ( Text )
+        {
+            case "=" :
+            case "+=" :
+            case "-=" :
+            case "*=" :
+            case "/=" :
+            case "%=" :
+            case "<<=" :
+            case ">>=" :
+            case "&=" :
+            case "^=" :
+            case "|=" :
+            {
+                return 12;
+            }
+
+            case "||" :
+            {
+                return 11;
+            }
+
+            case "&&" :
+            {
+                return 10;
+            }
+
+            case "|" :
+            {
+                return 9;
+            }
+
+            case "^" :
+            {
+                return 8;
+            }
+
+            case "&" :
+            {
+                return 7;
+            }
+
+            case "==" :
+            case "!=" :
+            {
+                return 6;
+            }
+
+            case "<" :
+            case "<=" :
+            case ">" :
+            case ">=" :
+            {
+                return 5;
+            }
+
+            case "<<" :
+            case ">>" :
+            {
+                return 4;
+            }
+
+            case "+" :
+            case "-" :
+            {
+                return 3;
+            }
+
+            case "~" :
+            {
+                return ( LanguageType == LANGUAGE_TYPE.D ) ? 3 : 1;
+            }
+
+            case "*" :
+            case "/" :
+            case "%" :
+            {
+                return 2;
+            }
+
+            case "!" :
+            {
+                return 1;
+            }
+
+            default :
+            {
+                return 0;
+            }
+        }
+    }
+
     // ~~
 
     string GetDump(
@@ -600,7 +697,7 @@ class CODE
         Token = new TOKEN( "", Context.LanguageType, Context.TokenType );
         Token.LineIndex = LineIndex;
         Token.ColumnIndex = TokenCharacterIndex - LineCharacterIndex;
-        
+
         TokenArray ~= Token;
         TokenIsSplit = false;
     }
@@ -1553,12 +1650,14 @@ class CODE
                         }
                         else if ( token.Type == TOKEN_TYPE.Separator
                                   && ( token.Text == ")"
+                                       || token.Text == "]"
                                        || token.Text == "}" ) )
                         {
                             ++level;
                         }
                         else if ( token.Type == TOKEN_TYPE.Separator
                                   && ( token.Text == "("
+                                       || token.Text == "["
                                        || token.Text == "{" ) )
                         {
                             --level;
@@ -1586,6 +1685,93 @@ class CODE
                 }
 
                 return -1;
+            }
+        }
+
+        return -1;
+    }
+
+    // ~~
+
+    long FindSuperOperatorTokenIndex(
+        long operator_token_index
+        )
+    {
+        long
+            level,
+            operator_token_priority,
+            token_index,
+            token_priority;
+        LANGUAGE_TYPE
+            operator_language_type;
+        TOKEN
+            operator_token,
+            token;
+
+        operator_token = TokenArray[ operator_token_index ];
+        operator_token_priority = operator_token.GetPriority();
+
+        if ( operator_token_priority > 0 )
+        {
+            operator_language_type = operator_token.LanguageType;
+
+            level = 0;
+
+            for ( token_index = operator_token_index - 1;
+                  token_index >= 0;
+                  --token_index )
+            {
+                token = TokenArray[ token_index ];
+
+                if ( token.LanguageType == operator_language_type )
+                {
+                    if ( token.Type == TOKEN_TYPE.Operator )
+                    {
+                        token_priority = token.GetPriority();
+
+                        if ( token_priority > operator_token_priority
+                             && level == 0 )
+                        {
+                            return token_index;
+                        }
+                    }
+                    else if ( token.Type == TOKEN_TYPE.Separator
+                              && ( token.Text == ")"
+                                   || token.Text == "]"
+                                   || token.Text == "}" ) )
+                    {
+                        ++level;
+                    }
+                    else if ( token.Type == TOKEN_TYPE.Separator
+                              && ( token.Text == "("
+                                   || token.Text == "["
+                                   || token.Text == "{" ) )
+                    {
+                        --level;
+
+                        if ( level < 0 )
+                        {
+                            return -1;
+                        }
+                    }
+                    else if ( token.Type == TOKEN_TYPE.Separator
+                              && ( token.Text == ","
+                                   || token.Text == ";" ) )
+                    {
+                        if ( level == 0 )
+                        {
+                            if ( token.Text == ","
+                                 && !token.EndsLine )
+                            {
+                                return token_index;
+                            }
+                            else
+                            {
+                                return -1;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -2092,6 +2278,7 @@ class CODE
             next_column_index,
             next_token_index,
             separator_token_index,
+            super_operator_token_index,
             token_index;
         BLOCK
             block;
@@ -2298,6 +2485,20 @@ class CODE
                             {
                                 token.BaseColumnOffset = 4;
                             }
+                        }
+                    }
+                }
+                else if ( token.Type == TOKEN_TYPE.Operator )
+                {
+                    if ( token.BeginsLine
+                         && token.GetPriority() > 0 )
+                    {
+                        super_operator_token_index = FindSuperOperatorTokenIndex( token_index );
+
+                        if ( super_operator_token_index != -1 )
+                        {
+                            token.BaseTokenIndex = super_operator_token_index;
+                            token.BaseColumnOffset = TokenArray[ super_operator_token_index ].Text.length + 1;
                         }
                     }
                 }

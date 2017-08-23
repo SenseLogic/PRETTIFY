@@ -139,7 +139,13 @@
             ) :
             Integer( 0 )
         {
-            if ( Integer == 0 )
+            if ( Integer == 0
+                 || Integer * 2
+                    != Integer -1
+                    && Integer != -1
+                    && Func(
+                          Integer * 2, X
+                                       + 2 ) )
             {
                 ++Integer;
             }
