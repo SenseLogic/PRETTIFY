@@ -29,7 +29,7 @@ import std.file : dirEntries, readText, write, SpanMode;
 import std.path : baseName, dirName, extension;
 import std.random : uniform;
 import std.stdio : writeln;
-import std.string : endsWith, indexOf, replace, startsWith;
+import std.string : endsWith, indexOf, lastIndexOf, replace, startsWith;
 
 // == GLOBAL
 
@@ -2590,7 +2590,7 @@ class CODE
 
     // ~~
 
-    string GetFixedFileText(
+    string GetProcessedFileText(
         string file_text,
         string file_path
         )
@@ -2635,7 +2635,43 @@ void Abort(
 
 // ~~
 
-void FixFile(
+void SplitFilePathFilter(
+    string file_path_filter,
+    ref string folder_path,
+    ref string file_name_filter,
+    ref SpanMode span_mode
+    )
+{
+    long
+        folder_path_character_count;
+    string
+        file_name;
+
+    folder_path_character_count = file_path_filter.lastIndexOf( '/' ) + 1;
+
+    folder_path = file_path_filter[ 0 .. folder_path_character_count ];
+    file_name_filter = file_path_filter[ folder_path_character_count .. $ ];
+    
+    if ( folder_path.endsWith( "//" ) )
+    {
+        folder_path = folder_path[ 0 .. $ - 1 ];
+
+        span_mode = SpanMode.breadth;
+    }
+    else
+    {
+        span_mode = SpanMode.shallow;
+    }
+
+    if ( folder_path == "./" )
+    {
+        folder_path = "";
+    }
+}
+
+// ~~
+
+void ProcessFile(
     string file_path
     )
 {
@@ -2660,7 +2696,7 @@ void FixFile(
         backup_file_path.write( file_text );
     }
 
-    file_text = code.GetFixedFileText( file_text, file_path );
+    file_text = code.GetProcessedFileText( file_text, file_path );
 
     if ( HasOutputFolder )
     {
@@ -2674,17 +2710,27 @@ void FixFile(
 
 // ~~
 
-void FixFiles(
+void ProcessFiles(
     string file_path_filter
     )
 {
-    writeln( "Fixing files : ", file_path_filter );
+    string
+        file_name,
+        file_name_filter,
+        file_path,
+        folder_path;
+    SpanMode
+        span_mode;
 
-    foreach ( folder_entry; dirEntries( file_path_filter.dirName(), file_path_filter.baseName(), SpanMode.shallow ) )
+    writeln( "Processing files : ", file_path_filter );
+    
+    SplitFilePathFilter( file_path_filter, folder_path, file_name_filter, span_mode );
+
+    foreach ( folder_entry; dirEntries( folder_path, file_name_filter, span_mode ) )
     {
         if ( folder_entry.isFile() )
         {
-            FixFile( folder_entry.name() );
+            ProcessFile( folder_entry.name() );
         }
     }
 }
@@ -2698,7 +2744,6 @@ void main(
     bool
         it_has_output_folder;
     string
-        file_path_filter,
         option;
 
     HasBackupFolder = false;
@@ -2740,20 +2785,24 @@ void main(
         }
     }
 
-    if ( argument_array.length == 1 )
+    if ( argument_array.length >= 1 )
     {
-        file_path_filter = argument_array[ 0 ];
+        while ( argument_array.length >= 1 )
+        {
+            ProcessFiles( argument_array[ 0 ] );
 
-        FixFiles( file_path_filter );
+            argument_array = argument_array[ 1 .. $ ];
+        }
     }
     else
     {
         writeln( "Usage :" );
-        writeln( "    prettify [options] file_path_filter" );
+        writeln( "    prettify [options] file_path_filter ..." );
         writeln( "Options :" );
         writeln( "    --backup BACKUP_FOLDER/" );
         writeln( "    --output OUTPUT_FOLDER/" );
-        writeln( "Example :" );
+        writeln( "Examples :" );
+        writeln( "    prettify \".//*.hpp\" \".//*.cpp\"" );
         writeln( "    prettify --backup BACKUP_FOLDER/ \"*.php\"" );
         writeln( "    prettify --output OUTPUT_FOLDER/ \"*.js\"" );
 

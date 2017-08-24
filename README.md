@@ -41,10 +41,10 @@ prettify [options] file_path_filter
 ### Examples
 
 ```bash
-prettify "*.d"
+prettify ".//*.d"
 ```
 
-Prettifies all D files.
+Prettifies all D files in the current folder and its subfolders.
 
 ```bash
 prettify --backup BACKUP_FOLDER/ "*.php"
