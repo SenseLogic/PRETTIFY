@@ -1995,7 +1995,7 @@ class CODE
                 }
 
                 if ( next_token !is null
-                     && token.Text.endsWith( "\\" ) )
+                     && !token.Text.endsWith( "\\" ) )
                 {
                     next_token.BeginsStatement = true;
                 }
@@ -2055,6 +2055,7 @@ class CODE
             statement_token_index,
             token_index;
         TOKEN
+            prior_token,
             token;
 
         for ( token_index = 1;
