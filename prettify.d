@@ -2652,7 +2652,7 @@ void SplitFilePathFilter(
 
     folder_path = file_path_filter[ 0 .. folder_path_character_count ];
     file_name_filter = file_path_filter[ folder_path_character_count .. $ ];
-    
+
     if ( folder_path.endsWith( "//" ) )
     {
         folder_path = folder_path[ 0 .. $ - 1 ];
@@ -2724,7 +2724,7 @@ void ProcessFiles(
         span_mode;
 
     writeln( "Processing files : ", file_path_filter );
-    
+
     SplitFilePathFilter( file_path_filter, folder_path, file_name_filter, span_mode );
 
     foreach ( folder_entry; dirEntries( folder_path, file_name_filter, span_mode ) )
