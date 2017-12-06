@@ -2256,6 +2256,7 @@ class CODE
                                          && next_token.Text != "->"
                                          && ( next_token.Text != "<" || token.LanguageType != LANGUAGE_TYPE.Cpp )
                                          && ( next_token.Text != ">" || token.LanguageType != LANGUAGE_TYPE.Cpp )
+                                         && ( next_token.Text != ">>" || token.LanguageType != LANGUAGE_TYPE.Cpp )
                                          && ( next_token.Text != "!" || token.LanguageType != LANGUAGE_TYPE.D ) )
                                     || ( token.Type == TOKEN_TYPE.Operator
                                          && next_token.Type == TOKEN_TYPE.Operator ) ) ) )
