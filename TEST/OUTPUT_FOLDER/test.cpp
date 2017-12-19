@@ -69,8 +69,8 @@
     #include "integer_32.hpp"
 
     #define TEST_Text \
-    "Some" \
-    "Text"
+      "Some" \
+      "Text"
 
     class TEST
     {
@@ -95,24 +95,24 @@
 
     #ifndef __TEST_H__
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
     #else
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
 
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
     #endif
 
     #ifndef __TEST_H__
         #define __TEXT_H__
     #else
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
     #endif
 #else
     #error Error
@@ -127,8 +127,8 @@
     #include "integer_32.hpp"
 
     #define TEST_Text \
-    "Some" \
-    "Text"
+      "Some" \
+      "Text"
 
     class TEST
     {
@@ -159,24 +159,24 @@
 
     #ifndef __TEST_H__
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
     #else
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
 
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
     #endif
 
     #ifndef __TEST_H__
         #define __TEXT_H__
     #else
         #define TEST_Text \
-        "Some" \
-        "Text"
+          "Some" \
+          "Text"
     #endif
 #else
     #error Error

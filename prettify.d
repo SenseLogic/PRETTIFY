@@ -2679,7 +2679,9 @@ void ProcessFile(
 {
     string
         backup_file_path,
-        file_text;
+        file_text,
+        processed_file_path,
+        processed_file_text;
     CODE
         code;
 
@@ -2698,16 +2700,24 @@ void ProcessFile(
         backup_file_path.write( file_text );
     }
 
-    file_text = code.GetProcessedFileText( file_text, file_path );
-
+    processed_file_text = code.GetProcessedFileText( file_text, file_path );
+    
     if ( HasOutputFolder )
     {
-        file_path = OutputFolderPath ~ file_path.baseName();
+        processed_file_path = OutputFolderPath ~ file_path.baseName();
+    }
+    else
+    {
+        processed_file_path = file_path;
     }
 
-    writeln( "Writing file : ", file_path );
+    if ( processed_file_path != file_path
+         || processed_file_text != file_text )
+    {
+        writeln( "Writing file : ", processed_file_path );
 
-    file_path.write( file_text );
+        processed_file_path.write( processed_file_text );
+    }
 }
 
 // ~~
