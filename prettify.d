@@ -614,7 +614,7 @@ class CODE
         }
         else
         {
-            token = TokenArray[ TokenArray.length - 1 ];
+            token = TokenArray[ TokenArray.length.to!long() - 1 ];
 
             return
                 ( token.Type == TOKEN_TYPE.Separator
@@ -762,7 +762,7 @@ class CODE
             }
             else
             {
-                token.PriorSpaceCount = token.ColumnIndex - prior_token.ColumnIndex - prior_token.Text.length;
+                token.PriorSpaceCount = token.ColumnIndex - prior_token.ColumnIndex - prior_token.Text.length.to!long();
             }
 
             prior_token = token;
