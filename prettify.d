@@ -205,7 +205,9 @@ class TOKEN
             }
 
             case "==" :
+            case "===" :
             case "!=" :
+            case "!==" :
             {
                 return 6;
             }
@@ -2701,7 +2703,7 @@ void ProcessFile(
     }
 
     processed_file_text = code.GetProcessedFileText( file_text, file_path );
-    
+
     if ( HasOutputFolder )
     {
         processed_file_path = OutputFolderPath ~ file_path.baseName();
