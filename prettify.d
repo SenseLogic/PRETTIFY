@@ -2687,7 +2687,7 @@ void ProcessFile(
     CODE
         code;
 
-    code = new CODE;
+    code = new CODE();
 
     writeln( "Reading file : ", file_path );
 
