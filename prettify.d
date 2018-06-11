@@ -18,8 +18,6 @@
     along with Prettify.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// == LOCAL
-
 // -- IMPORTS
 
 import core.stdc.stdlib : exit;
@@ -30,8 +28,6 @@ import std.path : baseName, dirName, extension;
 import std.random : uniform;
 import std.stdio : writeln;
 import std.string : endsWith, indexOf, lastIndexOf, replace, startsWith;
-
-// == GLOBAL
 
 // -- TYPES
 
