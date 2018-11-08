@@ -799,7 +799,7 @@ class CODE
         FileLanguageType = GetFileLanguageType();
         LineCharacterIndex = 0;
         LineIndex = 0;
-        TokenArray = [];
+        TokenArray = null;
         TokenIsSplit = false;
 
         if ( FileLanguageType == LANGUAGE_TYPE.None )
@@ -2323,7 +2323,7 @@ class CODE
             next_column_index = column_index;
         }
 
-        block_array = [];
+        block_array = null;
         line_token_index = 0;
         separator_token_index = -1;
         base_token_index = -1;
