@@ -2738,9 +2738,9 @@ void ProcessFiles(
 
     foreach ( folder_entry; dirEntries( folder_path, file_name_filter, span_mode ) )
     {
-        if ( folder_entry.isFile() )
+        if ( folder_entry.isFile )
         {
-            ProcessFile( folder_entry.name() );
+            ProcessFile( folder_entry.name );
         }
     }
 }
