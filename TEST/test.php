@@ -2,7 +2,7 @@
 <form>blabla<textarea id="text">blabla<span>blabla</span></textarea>blabla</form>
 <!-- long comment -->
 
-<!-- 
+<!--
     long comment
 -->
 
