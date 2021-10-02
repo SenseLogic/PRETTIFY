@@ -6,7 +6,7 @@ Source code prettifier.
 
 ## Features
 
-* Make source code files with the following extensions adhere to [Coda](https://github.com/senselogic/CODA) rules :
+* Make source code files with the following extensions adhere to [Coda](https://github.com/senselogic/CODA) spacing rules :
   * PHP : php.
   * HTML : html, htm, xml, twig.
   * CSS : css, less, pepss, sass, scss, styl.
