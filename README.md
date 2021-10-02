@@ -6,7 +6,7 @@ Source code prettifier.
 
 ## Features
 
-* Prettifies source code files with the following extensions :
+* Make source code files with the following extensions adhere to [Coda](https://github.com/senselogic/CODA) rules :
   * PHP : php.
   * HTML : html, htm, xml, twig.
   * CSS : css, less, pepss, sass, scss, styl.
