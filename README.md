@@ -10,10 +10,11 @@ Source code prettifier.
   * PHP : php.
   * HTML : html, htm, xml, twig.
   * CSS : css, less, pepss, sass, scss, styl.
-  * JavaScript : js, json.
+  * JavaScript : js, jsx, ts, tsx, json.
   * C : c, h.
   * C++ : cxx, hxx, cpp, hpp.
   * D : d.
+  * Dart : dart.
 
 ## Installation
 

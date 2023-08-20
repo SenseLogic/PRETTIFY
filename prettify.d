@@ -42,6 +42,7 @@ enum LANGUAGE_TYPE
     Css,
     Cpp,
     D,
+    Dart,
     Gs,
     Js,
     Php
@@ -448,6 +449,14 @@ class CODE
 
     // ~~
 
+    bool IsDartFileExtension(
+        )
+    {
+        return FileExtension == ".dart";
+    }
+
+    // ~~
+
     bool IsGsFileExtension(
         )
     {
@@ -461,6 +470,9 @@ class CODE
     {
         return
             FileExtension == ".js"
+            || FileExtension == ".jsx"
+            || FileExtension == ".ts"
+            || FileExtension == ".tsx"
             || FileExtension == ".json";
     }
 
@@ -492,6 +504,10 @@ class CODE
         else if ( IsDFileExtension() )
         {
             return LANGUAGE_TYPE.D;
+        }
+        else if ( IsDartFileExtension() )
+        {
+            return LANGUAGE_TYPE.Dart;
         }
         else if ( IsGsFileExtension() )
         {
