@@ -13,6 +13,7 @@ Source code prettifier.
   * JavaScript : js, jsx, ts, tsx, json.
   * C : c, h.
   * C++ : cxx, hxx, cpp, hpp.
+  * C# : cs.
   * D : d.
   * Dart : dart.
 
@@ -58,6 +59,11 @@ prettify --output OUTPUT_FOLDER/ "*.js"
 ```
 
 Prettifies all JavaScript files and store the fixed files in "OUTPUT_FOLDER/".
+
+## Limitations
+
+- Tabs are systematically converted to four spaces.
+- The lexer does not support verbatim strings, raw string literals, interpolated strings and regular expressions.
 
 ## Version
 

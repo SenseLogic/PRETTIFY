@@ -441,6 +441,14 @@ class CODE
 
     // ~~
 
+    bool IsCSharpFileExtension(
+        )
+    {
+        return FileExtension == ".cs";
+    }
+
+    // ~~
+
     bool IsDFileExtension(
         )
     {
@@ -497,7 +505,8 @@ class CODE
         {
             return LANGUAGE_TYPE.Css;
         }
-        else if ( IsCppFileExtension() )
+        else if ( IsCppFileExtension()
+                  || IsCSharpFileExtension() )
         {
             return LANGUAGE_TYPE.Cpp;
         }
