@@ -41,10 +41,12 @@ enum LANGUAGE_TYPE
     Html,
     Css,
     Cpp,
+    Csharp,
     D,
     Dart,
     Gs,
     Js,
+    Rust,
     Php
 }
 
@@ -441,7 +443,7 @@ class CODE
 
     // ~~
 
-    bool IsCSharpFileExtension(
+    bool IsCsharpFileExtension(
         )
     {
         return FileExtension == ".cs";
@@ -494,21 +496,28 @@ class CODE
 
     // ~~
 
+    bool IsRustFileExtension(
+        )
+    {
+        return FileExtension == ".rs";
+    }
+
+    // ~~
+
     LANGUAGE_TYPE GetFileLanguageType(
         )
     {
-        if ( IsHtmlFileExtension() )
+        if ( IsCppFileExtension() )
         {
-            return LANGUAGE_TYPE.Html;
+            return LANGUAGE_TYPE.Cpp;
+        }
+        else if ( IsCsharpFileExtension() )
+        {
+            return LANGUAGE_TYPE.Csharp;
         }
         else if ( IsCssFileExtension() )
         {
             return LANGUAGE_TYPE.Css;
-        }
-        else if ( IsCppFileExtension()
-                  || IsCSharpFileExtension() )
-        {
-            return LANGUAGE_TYPE.Cpp;
         }
         else if ( IsDFileExtension() )
         {
@@ -522,6 +531,10 @@ class CODE
         {
             return LANGUAGE_TYPE.Gs;
         }
+        else if ( IsHtmlFileExtension() )
+        {
+            return LANGUAGE_TYPE.Html;
+        }
         else if ( IsJsFileExtension() )
         {
             return LANGUAGE_TYPE.Js;
@@ -529,6 +542,10 @@ class CODE
         else if ( IsPhpFileExtension() )
         {
             return LANGUAGE_TYPE.Php;
+        }
+        else if ( IsRustFileExtension() )
+        {
+            return LANGUAGE_TYPE.Rust;
         }
         else
         {
@@ -1702,6 +1719,27 @@ class CODE
                                 return token_index - 1;
                             }
 
+                            if ( token.Type == TOKEN_TYPE.Identifier )
+                            {
+                                while ( token_index > 0 )
+                                {
+                                    prior_token = TokenArray[ token_index - 1 ];
+
+                                    if ( prior_token.LineIndex == token.LineIndex
+                                         && prior_token.LanguageType == separator_language_type 
+                                         && prior_token.Type == TOKEN_TYPE.Identifier )
+                                    {
+                                        --token_index;
+                                        token = prior_token;
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+
+                                }
+                            }
+
                             return token_index;
                         }
                     }
@@ -2240,8 +2278,7 @@ class CODE
                           || ( next_token.Type == TOKEN_TYPE.Separator
                                && ( ( next_token.Text == "}" && token.Text != "{" )
                                     || ( next_token.Text == "]" && token.Text != "[" )
-                                    || ( next_token.Text == ")" && token.Text != "(" )
-                                    || ( next_token.Text == ":" && token.LanguageType > LANGUAGE_TYPE.Css ) ) )
+                                    || ( next_token.Text == ")" && token.Text != "(" ) ) )
                           || ( token.LanguageType > LANGUAGE_TYPE.Css
                                && next_token.LanguageType > LANGUAGE_TYPE.Css
                                && ( ( token.Type == TOKEN_TYPE.Operator
@@ -2255,8 +2292,8 @@ class CODE
                                       && token.Text != "++"
                                       && token.Text != "::"
                                       && token.Text != "->"
-                                      && ( token.Text != "<" || token.LanguageType != LANGUAGE_TYPE.Cpp )
-                                      && ( token.Text != ">" || token.LanguageType != LANGUAGE_TYPE.Cpp )
+                                      && token.Text != "<"
+                                      && token.Text != ">"
                                       && !( ( ( token.Text == "&"
                                                 && ( token.LanguageType == LANGUAGE_TYPE.Cpp
                                                      || token.LanguageType == LANGUAGE_TYPE.D
@@ -2277,8 +2314,8 @@ class CODE
                                          && next_token.Text != "++"
                                          && next_token.Text != "::"
                                          && next_token.Text != "->"
-                                         && ( next_token.Text != "<" || token.LanguageType != LANGUAGE_TYPE.Cpp )
-                                         && ( next_token.Text != ">" || token.LanguageType != LANGUAGE_TYPE.Cpp )
+                                         && next_token.Text != "<"
+                                         && next_token.Text != ">"
                                          && ( next_token.Text != ">>" || token.LanguageType != LANGUAGE_TYPE.Cpp )
                                          && ( next_token.Text != "!" || token.LanguageType != LANGUAGE_TYPE.D ) )
                                     || ( token.Type == TOKEN_TYPE.Operator

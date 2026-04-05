@@ -58,22 +58,22 @@
             */
 
             for ( var i = 1;
-                  i < 20;
+                  i<20;
                   ++i )
             {
                 for ( var j = 1;
-                      j - 1 < i + 1;
+                      j - 1<i + 1;
                       j++ )
                 {
-                    var x = -( i + j ) > 0 || i < -j ? i * 2 : j - 1;
+                    var x = -( i + j )>0 || i< -j ? i * 2: j - 1;
                     var a = i + j;
                     var b = i - j;
 
-                    if ( i < j || i == -1 )
+                    if ( i<j || i == -1 )
                     {
                         continue;
                     }
-                    else if ( i < j
+                    else if ( i<j
                               || ( i == -1
                                    && j >= 0 ) )
                     {

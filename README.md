@@ -7,15 +7,16 @@ Source code prettifier.
 ## Features
 
 * Make source code files with the following extensions adhere to [Coda](https://github.com/senselogic/CODA) spacing rules :
-  * PHP : php.
-  * HTML : html, htm, xml, twig.
-  * CSS : css, less, pepss, sass, scss, styl.
-  * JavaScript : js, jsx, ts, tsx, json.
-  * C : c, h.
-  * C++ : cxx, hxx, cpp, hpp.
-  * C# : cs.
-  * D : d.
-  * Dart : dart.
+  * C : .c .h
+  * C++ : .cxx .hxx .cpp .hpp
+  * C# : .cs
+  * CSS : .css .less .pepss .sass .scss .styl
+  * JavaScript : .js .jsx .ts .tsx .json
+  * HTML : .htm .html .xml .twig
+  * D : .d
+  * Dart : .dart
+  * PHP : .php
+  * Rust : .rs
 
 ## Installation
 

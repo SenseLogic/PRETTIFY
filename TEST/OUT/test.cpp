@@ -74,7 +74,7 @@
 
     class TEST
     {
-        public :
+        public:
 
         TEST(
             VOID
@@ -132,7 +132,7 @@
 
     class TEST
     {
-        public :
+        public:
 
         TEST(
             VOID

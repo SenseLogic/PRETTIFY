@@ -25,16 +25,16 @@ window.onload = function()
                   .color( 'rgb(255,0,0)' )
                   .attr(
                       {
-                          x : 20,
-                          y : 100,
-                          w : 10,
-                          h : 100
+                          x: 20,
+                          y: 100,
+                          w: 10,
+                          h: 100
                       }
                       )
                   .multiway( 4,
                              {
-                                 Q : -90,
-                                 W : 90
+                                 Q: -90,
+                                 W: 90
                              }
                              );
 
@@ -42,17 +42,17 @@ window.onload = function()
                   .color( 'rgb(0,255,0)' )
                   .attr(
                       {
-                          x : 580,
-                          y : 100,
-                          w : 10,
-                          h : 100
+                          x: 580,
+                          y: 100,
+                          w: 10,
+                          h: 100
                       }
                       )
                   .multiway(
                       4,
                       {
-                          UP_ARROW : -90,
-                          DOWN_ARROW : 90
+                          UP_ARROW: -90,
+                          DOWN_ARROW: 90
                       }
                       );
 
@@ -62,12 +62,12 @@ window.onload = function()
                   .color( 'rgb(0,0,255)' )
                   .attr(
                       {
-                          x : 300,
-                          y : 150,
-                          w : 10,
-                          h : 10,
-                          dX : Crafty.math.randomInt( 2, 5 ),
-                          dY : Crafty.math.randomInt( 2, 5 )
+                          x: 300,
+                          y: 150,
+                          w: 10,
+                          h: 10,
+                          dX: Crafty.math.randomInt( 2, 5 ),
+                          dY: Crafty.math.randomInt( 2, 5 )
                       }
                       )
                   .bind(
@@ -116,11 +116,11 @@ window.onload = function()
                       Crafty.e( "LeftPoints, DOM, 2D, Text" )
                             .attr(
                                 {
-                                    x : 20,
-                                    y : 20,
-                                    w : 100,
-                                    h : 20,
-                                    points : 0
+                                    x: 20,
+                                    y: 20,
+                                    w: 100,
+                                    h: 20,
+                                    points: 0
                                 }
                                 )
                             .text( "0 Points" );
@@ -128,11 +128,11 @@ window.onload = function()
             Crafty.e( "RightPoints, DOM, 2D, Text" )
                   .attr(
                       {
-                          x : 515,
-                          y : 20,
-                          w : 100,
-                          h : 20,
-                          points : 0
+                          x: 515,
+                          y: 20,
+                          w: 100,
+                          h: 20,
+                          points: 0
                       }
                       )
                   .text( "0 Points" );
@@ -141,19 +141,19 @@ window.onload = function()
 
     Crafty.e( "2D, DOM, Text" ).attr(
         {
-            x : 250,
-            y : 130,
-            w : 300
+            x: 250,
+            y: 130,
+            w: 300
         }
         ).text( "Click to play..." );
 
     Crafty.e( "2D, DOM, Mouse" )
           .attr(
               {
-                  x : 0,
-                  y : 0,
-                  h : 300,
-                  w : 600
+                  x: 0,
+                  y: 0,
+                  h: 300,
+                  w: 600
               }
               ).bind(
                   "Click",
@@ -180,14 +180,14 @@ function SetTimer()
 }
 
 for ( var i = 0;
-      i < 10;
+      i<10;
       ++i )
 {
     for ( var j = 0;
-          j < 10;
+          j<10;
           ++j )
     {
-        if ( i > j
+        if ( i>j
              && i <= j + 2
              && !( i == 0
                    || j == 0 ) )
@@ -221,8 +221,8 @@ define(
                 var scroll_position = editor.getScrollPos();
                 var code =
                 {
-                    FileText : document.getText(),
-                    FilePath : document.file.fullPath
+                    FileText: document.getText(),
+                    FilePath: document.file.fullPath
                 };
 
                 StandardizeCode( code );
@@ -239,10 +239,10 @@ define(
             COMMAND_ID,
             [
                 {
-                    key : "Ctrl-Alt-S", platform : "win"
+                    key: "Ctrl-Alt-S", platform: "win"
                 },
                 {
-                    key : "Ctrl-Alt-S", platform : "mac"
+                    key: "Ctrl-Alt-S", platform: "mac"
                 }
             ]
             );
