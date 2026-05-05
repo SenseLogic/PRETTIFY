@@ -4,7 +4,7 @@ bool IsSeparatorCharacterIndex(
     )
 {
     char
-        character;
+    character;
 
     if ( character_index >= 0
          && character_index < text.length )
@@ -36,14 +36,27 @@ bool StartsByVowel(
 // ~~
 
 value.Text
-    = ( ( table.PriorFirstName != "" ) ? table.PriorFirstName : Random.MakeFirstName() ).toLower()
-      ~ "."
-      ~ ( ( table.PriorLastName != "" ) ? table.PriorLastName : Random.MakeLastName() ).toLower()
-      ~ [
-          "@gmail.com",
-          "@yahoo.com",
-          "@outlook.com",
-          "@live.com",
-          "@hotmail.com",
-          "@mail.com"
-        ][ Random.MakeIndex( 6 ) ];
+= ( ( table.PriorFirstName != "" ) ? table.PriorFirstName : Random.MakeFirstName() ).toLower()
+  ~ "."
+  ~ ( ( table.PriorLastName != "" ) ? table.PriorLastName : Random.MakeLastName() ).toLower()
+  ~ [
+      "@gmail.com",
+      "@yahoo.com",
+      "@outlook.com",
+      "@live.com",
+      "@hotmail.com",
+      "@mail.com"
+    ][ Random.MakeIndex( 6 ) ];
+
+// -- STRINGS
+
+auto raw = r"line1
+line2 \" not escaped";
+
+auto tok = q"line1
+line2 $var ${expr}";
+
+auto delimited = q{
+line1
+line2
+};

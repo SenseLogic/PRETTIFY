@@ -72,6 +72,25 @@ extends Being
         return 'Hello, my name is ${ name }, I\'m ${ age } years old and I weight ${ weight } kilograms.';
     }
 
+    // ~~
+
+    String getHelloMessage2(
+        )
+    {
+        var message = "Hi $name ( $ {age})";
+        var raw = r"raw $name ${age}";
+        var triple = """
+        line1
+        line2 $name
+        """;
+        var triple2 = '''
+        line1
+        line2 $ { age }
+        ''';
+
+        return message + raw + triple + triple2;
+    }
+
     // -- OPERATIONS
 
     void setAge(

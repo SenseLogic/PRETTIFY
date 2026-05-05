@@ -44,7 +44,6 @@ enum LANGUAGE_TYPE
     Csharp,
     D,
     Dart,
-    Gs,
     Js,
     Rust,
     Php
@@ -87,6 +86,49 @@ enum TOKEN_TYPE
     Operator,
     Separator,
     Special
+}
+
+// .. STRING_KIND
+
+enum STRING_KIND
+{
+    // -- CONSTANTS
+
+    None,
+    SingleQuote,
+    DoubleQuote,
+    Backtick,
+    DartTripleSingle,
+    DartTripleDouble,
+    CsharpVerbatimDouble,
+    DRawDouble,
+    DTokenDouble,
+    DTokenDelimited,
+    RustRawDouble
+}
+
+// .. INTERPOLATION_STYLE
+
+enum INTERPOLATION_STYLE
+{
+    // -- CONSTANTS
+
+    None,
+    JsTemplate,     // ${ ... }
+    Dart,           // $var or ${ ... }
+    Php,            // $var or ${ ... } (double-quoted strings)
+    Csharp          // { ... } inside $"" / $@""
+}
+
+// .. JSX_MODE
+
+enum JSX_MODE
+{
+    // -- CONSTANTS
+
+    None,
+    Tag,        // inside <Tag ...>
+    Children    // between > and </Tag>
 }
 
 // .. INDENTATION_TYPE
@@ -300,6 +342,21 @@ class CONTEXT
         LanguageType;
     TOKEN_TYPE
         TokenType;
+    STRING_KIND
+        StringKind;
+    INTERPOLATION_STYLE
+        InterpolationStyle;
+    JSX_MODE
+        JsxMode;
+    bool
+        IsRawString,
+        IsVerbatimString,
+        IsMultilineString;
+    int
+        RawFenceCount,          // Rust raw string: r###" ... "###
+        EmbeddedBraceDepth;     // interpolation / JSX {...} nesting
+    char
+        DelimitedCloseCharacter; // D q{...} / q(...) / q[...] / q<...>
 
     // -- CONSTRUCTORS
 
@@ -309,6 +366,15 @@ class CONTEXT
     {
         LanguageType = language_type;
         TokenType = TOKEN_TYPE.None;
+        StringKind = STRING_KIND.None;
+        InterpolationStyle = INTERPOLATION_STYLE.None;
+        JsxMode = JSX_MODE.None;
+        IsRawString = false;
+        IsVerbatimString = false;
+        IsMultilineString = false;
+        RawFenceCount = 0;
+        EmbeddedBraceDepth = 0;
+        DelimitedCloseCharacter = 0;
     }
 }
 
@@ -369,6 +435,8 @@ class CODE
         BaseContext,
         PhpContext,
         Context;
+    CONTEXT[]
+        ContextStack;
 
     // -- CONSTRUCTORS
 
@@ -388,6 +456,7 @@ class CODE
         BaseContext = null;
         PhpContext = null;
         Context = null;
+        ContextStack = null;
     }
 
     // -- INQUIRIES
@@ -467,14 +536,6 @@ class CODE
 
     // ~~
 
-    bool IsGsFileExtension(
-        )
-    {
-        return FileExtension == ".gs";
-    }
-
-    // ~~
-
     bool IsJsFileExtension(
         )
     {
@@ -484,6 +545,14 @@ class CODE
             || FileExtension == ".ts"
             || FileExtension == ".tsx"
             || FileExtension == ".json";
+    }
+
+    // ~~
+
+    bool IsJsxFileExtension(
+        )
+    {
+        return FileExtension == ".jsx" || FileExtension == ".tsx";
     }
 
     // ~~
@@ -526,10 +595,6 @@ class CODE
         else if ( IsDartFileExtension() )
         {
             return LANGUAGE_TYPE.Dart;
-        }
-        else if ( IsGsFileExtension() )
-        {
-            return LANGUAGE_TYPE.Gs;
         }
         else if ( IsHtmlFileExtension() )
         {
@@ -744,6 +809,26 @@ class CODE
 
     // ~~
 
+    void EmitInstantToken(
+        LANGUAGE_TYPE language_type,
+        TOKEN_TYPE token_type,
+        string text,
+        long start_character_index
+        )
+    {
+        TOKEN
+            token;
+
+        token = new TOKEN( text, language_type, token_type );
+        token.LineIndex = LineIndex;
+        token.ColumnIndex = start_character_index - LineCharacterIndex;
+
+        TokenArray ~= token;
+        TokenIsSplit = false;
+    }
+
+    // ~~
+
     void BeginToken(
         TOKEN_TYPE token_type
         )
@@ -774,6 +859,37 @@ class CODE
     {
         Token = null;
         Context.TokenType = TOKEN_TYPE.None;
+    }
+
+    // ~~
+
+    void SuspendToken(
+        )
+    {
+        // Keeps Context.TokenType so we can resume (used for interpolation/JSX).
+        Token = null;
+    }
+
+    // ~~
+
+    void PushContext(
+        CONTEXT context
+        )
+    {
+        ContextStack ~= Context;
+        Context = context;
+    }
+
+    // ~~
+
+    void PopContext(
+        )
+    {
+        if ( ContextStack.length > 0 )
+        {
+            Context = ContextStack[ $ - 1 ];
+            ContextStack = ContextStack[ 0 .. $ - 1 ];
+        }
     }
 
     // ~~
@@ -894,7 +1010,8 @@ class CODE
                          || ( ( Context.TokenType == TOKEN_TYPE.CharacterLiteral
                                 || Context.TokenType == TOKEN_TYPE.StringLiteral
                                 || Context.TokenType == TOKEN_TYPE.TextLiteral )
-                              && Context.LanguageType <= LANGUAGE_TYPE.Php )
+                              && Context.LanguageType <= LANGUAGE_TYPE.Php
+                              && !Context.IsMultilineString )
                          || ( Context.TokenType == TOKEN_TYPE.RegularExpressionLiteral
                               && Context.LanguageType == LANGUAGE_TYPE.Js ) )
                     {
@@ -1012,13 +1129,301 @@ class CODE
             }
             else if ( Context.TokenType == TOKEN_TYPE.StringLiteral )
             {
-                if ( character == '\"' )
+                if ( Context.InterpolationStyle == INTERPOLATION_STYLE.Dart
+                     && !Context.IsRawString
+                     && character == '$' )
+                {
+                    SuspendToken();
+
+                    if ( character_2 == '{' )
+                    {
+                        BeginToken( TOKEN_TYPE.Operator );
+                        AddTokenCharacter( character );
+                        EndToken();
+
+                        // Remember we are inside a string so we can resume after pop.
+                        Context.TokenType = TOKEN_TYPE.StringLiteral;
+
+                        PushContext( new CONTEXT( LANGUAGE_TYPE.None ) );
+                        Context.InterpolationStyle = INTERPOLATION_STYLE.Dart;
+                        Context.EmbeddedBraceDepth = 1;
+
+                        // Emit "{" in the interpolation context so we never split "${".
+                        BeginToken( TOKEN_TYPE.Separator );
+                        AddTokenCharacter( character_2 );
+                        EndToken();
+                        continue;
+                    }
+                    else if ( IsIdentifierCharacter( character_2 )
+                              && ( character_2 < '0' || character_2 > '9' ) )
+                    {
+                        BeginToken( TOKEN_TYPE.Identifier );
+                        AddTokenCharacter( character );
+
+                        while ( TokenCharacterIndex < character_count )
+                        {
+                            character_2 = ( TokenCharacterIndex < character_count ) ? file_text[ TokenCharacterIndex ] : 0;
+
+                            if ( IsIdentifierCharacter( character_2 ) )
+                            {
+                                AddTokenCharacter( character_2 );
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        EndToken();
+
+                        BeginToken( TOKEN_TYPE.StringLiteral );
+                        continue;
+                    }
+                    else
+                    {
+                        BeginToken( TOKEN_TYPE.Special );
+                        AddTokenCharacter( character );
+                        EndToken();
+                        BeginToken( TOKEN_TYPE.StringLiteral );
+                        continue;
+                    }
+                }
+                else if ( Context.InterpolationStyle == INTERPOLATION_STYLE.Php
+                          && !Context.IsRawString
+                          && character == '$' )
+                {
+                    SuspendToken();
+
+                    if ( character_2 == '{' )
+                    {
+                        BeginToken( TOKEN_TYPE.Operator );
+                        AddTokenCharacter( character );
+                        EndToken();
+
+                        Context.TokenType = TOKEN_TYPE.StringLiteral;
+
+                        PushContext( new CONTEXT( LANGUAGE_TYPE.None ) );
+                        Context.InterpolationStyle = INTERPOLATION_STYLE.Php;
+                        Context.EmbeddedBraceDepth = 1;
+
+                        BeginToken( TOKEN_TYPE.Separator );
+                        AddTokenCharacter( character_2 );
+                        EndToken();
+                        continue;
+                    }
+                    else if ( IsIdentifierCharacter( character_2 )
+                              && ( character_2 < '0' || character_2 > '9' ) )
+                    {
+                        BeginToken( TOKEN_TYPE.Identifier );
+                        AddTokenCharacter( character );
+
+                        while ( TokenCharacterIndex < character_count )
+                        {
+                            character_2 = ( TokenCharacterIndex < character_count ) ? file_text[ TokenCharacterIndex ] : 0;
+
+                            if ( IsIdentifierCharacter( character_2 ) )
+                            {
+                                AddTokenCharacter( character_2 );
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        EndToken();
+
+                        BeginToken( TOKEN_TYPE.StringLiteral );
+                        continue;
+                    }
+                    else
+                    {
+                        BeginToken( TOKEN_TYPE.Special );
+                        AddTokenCharacter( character );
+                        EndToken();
+                        BeginToken( TOKEN_TYPE.StringLiteral );
+                        continue;
+                    }
+                }
+                else if ( Context.InterpolationStyle == INTERPOLATION_STYLE.Csharp
+                          && !Context.IsRawString
+                          && character == '{' )
+                {
+                    if ( character_2 == '{' )
+                    {
+                        AddTokenCharacter( character );
+                        AddTokenCharacter( character_2 );
+                        continue;
+                    }
+                    else
+                    {
+                        SuspendToken();
+
+                        Context.TokenType = TOKEN_TYPE.StringLiteral;
+
+                        PushContext( new CONTEXT( LANGUAGE_TYPE.None ) );
+                        Context.InterpolationStyle = INTERPOLATION_STYLE.Csharp;
+                        Context.EmbeddedBraceDepth = 1;
+
+                        BeginToken( TOKEN_TYPE.Separator );
+                        AddTokenCharacter( character );
+                        EndToken();
+                        continue;
+                    }
+                }
+                if ( Context.StringKind == STRING_KIND.RustRawDouble )
+                {
+                    if ( character == '\"' )
+                    {
+                        bool
+                            has_matching_fence;
+                        int
+                            fence_index;
+
+                        has_matching_fence = true;
+
+                        for ( fence_index = 0; fence_index < Context.RawFenceCount; ++fence_index )
+                        {
+                            if ( file_text[ TokenCharacterIndex + 1 + fence_index ] != '#' )
+                            {
+                                has_matching_fence = false;
+                                break;
+                            }
+                        }
+
+                        if ( has_matching_fence )
+                        {
+                            BeginToken( TOKEN_TYPE.EndStringLiteral );
+                            AddTokenCharacter( character );
+
+                            for ( fence_index = 0; fence_index < Context.RawFenceCount; ++fence_index )
+                            {
+                                AddTokenCharacter( '#' );
+                            }
+
+                            EndToken();
+
+                            Context.StringKind = STRING_KIND.None;
+                            Context.IsRawString = false;
+                            Context.IsVerbatimString = false;
+                            Context.IsMultilineString = false;
+                            Context.RawFenceCount = 0;
+                        }
+                        else
+                        {
+                            AddTokenCharacter( character );
+                        }
+                    }
+                    else
+                    {
+                        AddTokenCharacter( character );
+                    }
+                }
+                else if ( Context.StringKind == STRING_KIND.DTokenDelimited )
+                {
+                    if ( character == Context.DelimitedCloseCharacter )
+                    {
+                        BeginToken( TOKEN_TYPE.EndStringLiteral );
+                        AddTokenCharacter( character );
+                        EndToken();
+
+                        Context.StringKind = STRING_KIND.None;
+                        Context.IsRawString = false;
+                        Context.IsVerbatimString = false;
+                        Context.IsMultilineString = false;
+                        Context.DelimitedCloseCharacter = 0;
+                    }
+                    else
+                    {
+                        AddTokenCharacter( character );
+                    }
+                }
+                else if ( Context.StringKind == STRING_KIND.DartTripleSingle )
+                {
+                    if ( character == '\''
+                         && character_2 == '\''
+                         && character_3 == '\'' )
+                    {
+                        BeginToken( TOKEN_TYPE.EndStringLiteral );
+                        AddTokenCharacter( character );
+                        AddTokenCharacter( character_2 );
+                        AddTokenCharacter( character_3 );
+                        EndToken();
+
+                        Context.StringKind = STRING_KIND.None;
+                        Context.IsRawString = false;
+                        Context.IsVerbatimString = false;
+                        Context.IsMultilineString = false;
+                    }
+                    else
+                    {
+                        AddTokenCharacter( character );
+                    }
+                }
+                else if ( Context.StringKind == STRING_KIND.DartTripleDouble )
+                {
+                    if ( character == '\"'
+                         && character_2 == '\"'
+                         && character_3 == '\"' )
+                    {
+                        BeginToken( TOKEN_TYPE.EndStringLiteral );
+                        AddTokenCharacter( character );
+                        AddTokenCharacter( character_2 );
+                        AddTokenCharacter( character_3 );
+                        EndToken();
+
+                        Context.StringKind = STRING_KIND.None;
+                        Context.IsRawString = false;
+                        Context.IsVerbatimString = false;
+                        Context.IsMultilineString = false;
+                    }
+                    else
+                    {
+                        AddTokenCharacter( character );
+                    }
+                }
+                else if ( Context.IsVerbatimString )
+                {
+                    if ( character == '\"' )
+                    {
+                        if ( character_2 == '\"' )
+                        {
+                            AddTokenCharacter( character );
+                            AddTokenCharacter( character_2 );
+                        }
+                        else
+                        {
+                            BeginToken( TOKEN_TYPE.EndStringLiteral );
+                            AddTokenCharacter( character );
+                            EndToken();
+
+                            Context.StringKind = STRING_KIND.None;
+                            Context.IsRawString = false;
+                            Context.IsVerbatimString = false;
+                            Context.IsMultilineString = false;
+                        }
+                    }
+                    else
+                    {
+                        AddTokenCharacter( character );
+                    }
+                }
+                else if ( ( Context.StringKind == STRING_KIND.SingleQuote
+                            && character == '\'' )
+                          || ( Context.StringKind != STRING_KIND.SingleQuote
+                               && character == '\"' ) )
                 {
                     BeginToken( TOKEN_TYPE.EndStringLiteral );
                     AddTokenCharacter( character );
                     EndToken();
+
+                    Context.StringKind = STRING_KIND.None;
+                    Context.IsRawString = false;
+                    Context.IsVerbatimString = false;
+                    Context.IsMultilineString = false;
                 }
-                else if ( character == '\\' )
+                else if ( character == '\\'
+                          && !Context.IsRawString )
                 {
                     AddTokenCharacter( character );
                     AddTokenCharacter( character_2 );
@@ -1030,11 +1435,37 @@ class CODE
             }
             else if ( Context.TokenType == TOKEN_TYPE.TextLiteral )
             {
-                if ( character == '`' )
+                if ( Context.InterpolationStyle == INTERPOLATION_STYLE.JsTemplate
+                     && character == '$'
+                     && character_2 == '{' )
                 {
-                    BeginToken( TOKEN_TYPE.EndStringLiteral );
+                    SuspendToken();
+
+                    BeginToken( TOKEN_TYPE.Operator );
                     AddTokenCharacter( character );
                     EndToken();
+
+                    Context.TokenType = TOKEN_TYPE.TextLiteral;
+
+                    PushContext( new CONTEXT( LANGUAGE_TYPE.None ) );
+                    Context.InterpolationStyle = INTERPOLATION_STYLE.JsTemplate;
+                    Context.EmbeddedBraceDepth = 1;
+
+                    BeginToken( TOKEN_TYPE.Separator );
+                    AddTokenCharacter( character_2 );
+                    EndToken();
+                    continue;
+                }
+                else if ( character == '`' )
+                {
+                    BeginToken( TOKEN_TYPE.EndTextLiteral );
+                    AddTokenCharacter( character );
+                    EndToken();
+
+                    Context.StringKind = STRING_KIND.None;
+                    Context.IsRawString = false;
+                    Context.IsVerbatimString = false;
+                    Context.IsMultilineString = false;
                 }
                 else if ( character == '\\' )
                 {
@@ -1049,6 +1480,226 @@ class CODE
             else if ( Context.TokenType == TOKEN_TYPE.Command )
             {
                 AddTokenCharacter( character );
+            }
+            else if ( Context.EmbeddedBraceDepth > 0
+                      && Context.InterpolationStyle != INTERPOLATION_STYLE.None
+                      && Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && ( character == '{' || character == '}' ) )
+            {
+                // Track interpolation braces regardless of current token type.
+                if ( character == '{' )
+                {
+                    ++Context.EmbeddedBraceDepth;
+                }
+                else
+                {
+                    --Context.EmbeddedBraceDepth;
+                }
+
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.Separator );
+                AddTokenCharacter( character );
+                EndToken();
+
+                if ( Context.EmbeddedBraceDepth == 0 )
+                {
+                    PopContext();
+
+                    if ( Context.TokenType == TOKEN_TYPE.StringLiteral )
+                    {
+                        BeginToken( TOKEN_TYPE.StringLiteral );
+                    }
+                    else if ( Context.TokenType == TOKEN_TYPE.TextLiteral )
+                    {
+                        BeginToken( TOKEN_TYPE.TextLiteral );
+                    }
+                }
+            }
+            else if ( Context.TokenType == TOKEN_TYPE.None
+                      && Context.LanguageType == LANGUAGE_TYPE.Js
+                      && IsJsxFileExtension()
+                      && character == '<'
+                      && ( character_2 == '>'
+                           || character_2 == '/'
+                           || IsAlphabeticalCharacter( character_2 )
+                           || character_2 == '_' ) )
+            {
+                bool
+                    is_closing_tag,
+                    is_self_closing;
+                char
+                    quote_character;
+                int
+                    brace_depth;
+                long
+                    start_index,
+                    tag_name_start_index,
+                    tag_name_end_index,
+                    tag_end_index,
+                    scan_index;
+                string
+                    jsx_tag_name,
+                    tag_tail;
+
+                start_index = TokenCharacterIndex;
+
+                // Fragment open: <>
+                if ( character_2 == '>' )
+                {
+                    EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.BeginOpeningTag, "<", start_index );
+                    EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.EndOpeningTag, ">", start_index + 1 );
+                    TokenCharacterIndex += 2;
+                }
+                // Fragment close: </>
+                else if ( character_2 == '/'
+                          && character_3 == '>' )
+                {
+                    EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.BeginClosingTag, "</", start_index );
+                    EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.EndClosingTag, ">", start_index + 2 );
+                    TokenCharacterIndex += 3;
+                }
+                else
+                {
+                    is_closing_tag = ( character_2 == '/' );
+                    tag_name_start_index = start_index + ( is_closing_tag ? 2 : 1 );
+
+                    tag_name_end_index = tag_name_start_index;
+
+                    while ( tag_name_end_index < character_count )
+                    {
+                        character = file_text[ tag_name_end_index ];
+
+                        if ( IsIdentifierCharacter( character )
+                             || character == '.'
+                             || character == ':'
+                             || character == '-' )
+                        {
+                            ++tag_name_end_index;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    jsx_tag_name = file_text[ tag_name_start_index .. tag_name_end_index ];
+
+                    // Scan until matching > or />
+                    quote_character = 0;
+                    brace_depth = 0;
+                    is_self_closing = false;
+                    tag_end_index = -1;
+
+                    for ( scan_index = tag_name_end_index; scan_index < character_count; ++scan_index )
+                    {
+                        character = file_text[ scan_index ];
+                        character_2 = ( scan_index + 1 < character_count ) ? file_text[ scan_index + 1 ] : 0;
+
+                        if ( quote_character != 0 )
+                        {
+                            if ( character == '\\' )
+                            {
+                                ++scan_index;
+                            }
+                            else if ( character == quote_character )
+                            {
+                                quote_character = 0;
+                            }
+                        }
+                        else
+                        {
+                            if ( character == '\''
+                                 || character == '\"' )
+                            {
+                                quote_character = character;
+                            }
+                            else if ( character == '{' )
+                            {
+                                ++brace_depth;
+                            }
+                            else if ( character == '}' )
+                            {
+                                if ( brace_depth > 0 )
+                                {
+                                    --brace_depth;
+                                }
+                            }
+                            else if ( brace_depth == 0
+                                      && character == '/'
+                                      && character_2 == '>' )
+                            {
+                                is_self_closing = true;
+                                tag_end_index = scan_index;
+                                break;
+                            }
+                            else if ( brace_depth == 0
+                                      && character == '>' )
+                            {
+                                tag_end_index = scan_index;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ( tag_end_index == -1 || jsx_tag_name.length == 0 )
+                    {
+                        BeginToken( TOKEN_TYPE.Operator );
+                        AddTokenCharacter( '<' );
+                        EndToken();
+                    }
+                    else
+                    {
+                        if ( is_closing_tag )
+                        {
+                            EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.BeginClosingTag, "</", start_index );
+                        }
+                        else
+                        {
+                            EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.BeginOpeningTag, "<", start_index );
+                        }
+
+                        EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.Identifier, jsx_tag_name, tag_name_start_index );
+
+                        if ( tag_end_index > tag_name_end_index )
+                        {
+                            tag_tail = file_text[ tag_name_end_index .. tag_end_index ];
+
+                            if ( tag_tail.length > 0 )
+                            {
+                                EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.Special, tag_tail, tag_name_end_index );
+                            }
+                        }
+
+                        if ( is_self_closing )
+                        {
+                            EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.CloseOpeningTag, "/>", tag_end_index );
+                            TokenCharacterIndex = tag_end_index + 2;
+                        }
+                        else
+                        {
+                            if ( is_closing_tag )
+                            {
+                                EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.EndClosingTag, ">", tag_end_index );
+                            }
+                            else
+                            {
+                                EmitInstantToken( LANGUAGE_TYPE.Html, TOKEN_TYPE.EndOpeningTag, ">", tag_end_index );
+                            }
+
+                            TokenCharacterIndex = tag_end_index + 1;
+                        }
+                    }
+                }
             }
             else if ( character == '?'
                       && character_2 == '>'
@@ -1142,15 +1793,382 @@ class CODE
                 AddTokenCharacter( character );
             }
 
+            // -- MULTILINE / RAW STRING LITERALS
+
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Csharp
+                      && character == '@'
+                      && character_2 == '\"' )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                EndToken();
+
+                Context.StringKind = STRING_KIND.CsharpVerbatimDouble;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = true;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Csharp
+                      && character == '$'
+                      && character_2 == '@'
+                      && character_3 == '\"' )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                AddTokenCharacter( character_3 );
+                EndToken();
+
+                Context.StringKind = STRING_KIND.CsharpVerbatimDouble;
+                Context.InterpolationStyle = INTERPOLATION_STYLE.Csharp;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = true;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Csharp
+                      && character == '@'
+                      && character_2 == '$'
+                      && character_3 == '\"' )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                AddTokenCharacter( character_3 );
+                EndToken();
+
+                Context.StringKind = STRING_KIND.CsharpVerbatimDouble;
+                Context.InterpolationStyle = INTERPOLATION_STYLE.Csharp;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = true;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Csharp
+                      && character == '$'
+                      && character_2 == '\"' )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                EndToken();
+
+                Context.StringKind = STRING_KIND.DoubleQuote;
+                Context.InterpolationStyle = INTERPOLATION_STYLE.Csharp;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = false;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Rust
+                      && character == 'r'
+                      && ( character_2 == '\"' || character_2 == '#' ) )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                int
+                    fence_count;
+                long
+                    look_index;
+
+                fence_count = 0;
+                look_index = TokenCharacterIndex + 1;
+
+                while ( look_index < character_count && file_text[ look_index ] == '#' )
+                {
+                    ++fence_count;
+                    ++look_index;
+                }
+
+                if ( look_index < character_count && file_text[ look_index ] == '\"' )
+                {
+                    BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                    AddTokenCharacter( character );
+
+                    while ( fence_count-- > 0 )
+                    {
+                        AddTokenCharacter( '#' );
+                    }
+
+                    AddTokenCharacter( '\"' );
+                    EndToken();
+
+                    Context.StringKind = STRING_KIND.RustRawDouble;
+                    Context.IsRawString = true;
+                    Context.IsVerbatimString = false;
+                    Context.IsMultilineString = true;
+                    Context.RawFenceCount = cast(int)( look_index - ( TokenCharacterIndex + 1 ) );
+
+                    BeginToken( TOKEN_TYPE.StringLiteral );
+                }
+                else
+                {
+                    BeginToken( TOKEN_TYPE.Identifier );
+                    AddTokenCharacter( character );
+                }
+            }
+
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.D
+                      && character == 'q'
+                      && ( character_2 == '\"'
+                           || character_2 == '{'
+                           || character_2 == '('
+                           || character_2 == '['
+                           || character_2 == '<' ) )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                EndToken();
+
+                if ( character_2 == '\"' )
+                {
+                    Context.StringKind = STRING_KIND.DTokenDouble;
+                    Context.IsRawString = true;
+                    Context.DelimitedCloseCharacter = 0;
+                }
+                else
+                {
+                    Context.StringKind = STRING_KIND.DTokenDelimited;
+                    Context.IsRawString = true;
+
+                    switch ( character_2 )
+                    {
+                        case '{' : Context.DelimitedCloseCharacter = '}'; break;
+                        case '(' : Context.DelimitedCloseCharacter = ')'; break;
+                        case '[' : Context.DelimitedCloseCharacter = ']'; break;
+                        case '<' : Context.DelimitedCloseCharacter = '>'; break;
+                        default : Context.DelimitedCloseCharacter = 0; break;
+                    }
+                }
+
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.D
+                      && character == 'r'
+                      && character_2 == '\"' )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                EndToken();
+
+                Context.StringKind = STRING_KIND.DRawDouble;
+                Context.IsRawString = true;
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Dart
+                      && character == 'r'
+                      && ( character_2 == '\''
+                           || character_2 == '\"' ) )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                EndToken();
+
+                Context.StringKind = ( character_2 == '\'' ) ? STRING_KIND.SingleQuote : STRING_KIND.DoubleQuote;
+                Context.IsRawString = true;
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Dart
+                      && character == '\''
+                      && character_2 == '\''
+                      && character_3 == '\'' )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                AddTokenCharacter( character_3 );
+                EndToken();
+
+                Context.StringKind = STRING_KIND.DartTripleSingle;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+            else if ( Context.TokenType != TOKEN_TYPE.ShortComment
+                      && Context.TokenType != TOKEN_TYPE.LongComment
+                      && Context.TokenType != TOKEN_TYPE.RegularExpressionLiteral
+                      && Context.TokenType != TOKEN_TYPE.CharacterLiteral
+                      && Context.TokenType != TOKEN_TYPE.StringLiteral
+                      && Context.TokenType != TOKEN_TYPE.TextLiteral
+                      && Context.TokenType != TOKEN_TYPE.Command
+                      && Context.LanguageType == LANGUAGE_TYPE.Dart
+                      && character == '\"'
+                      && character_2 == '\"'
+                      && character_3 == '\"' )
+            {
+                if ( Context.TokenType != TOKEN_TYPE.None )
+                {
+                    EndToken();
+                }
+
+                BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                AddTokenCharacter( character );
+                AddTokenCharacter( character_2 );
+                AddTokenCharacter( character_3 );
+                EndToken();
+
+                Context.StringKind = STRING_KIND.DartTripleDouble;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = true;
+
+                BeginToken( TOKEN_TYPE.StringLiteral );
+            }
+
             else if ( character == '\''
                       && ( Context.LanguageType >= LANGUAGE_TYPE.Css
                            || opening_tag_token_index != -1 ) )
             {
-                BeginToken( TOKEN_TYPE.BeginCharacterLiteral );
-                AddTokenCharacter( character );
-                EndToken();
+                if ( Context.LanguageType == LANGUAGE_TYPE.Dart )
+                {
+                    BeginToken( TOKEN_TYPE.BeginStringLiteral );
+                    AddTokenCharacter( character );
+                    EndToken();
 
-                BeginToken( TOKEN_TYPE.CharacterLiteral );
+                    Context.StringKind = STRING_KIND.SingleQuote;
+                    Context.IsRawString = false;
+                    Context.IsVerbatimString = false;
+                    Context.IsMultilineString = false;
+                    Context.InterpolationStyle = INTERPOLATION_STYLE.Dart;
+
+                    BeginToken( TOKEN_TYPE.StringLiteral );
+                }
+                else
+                {
+                    BeginToken( TOKEN_TYPE.BeginCharacterLiteral );
+                    AddTokenCharacter( character );
+                    EndToken();
+
+                    BeginToken( TOKEN_TYPE.CharacterLiteral );
+                }
             }
             else if ( character == '\"'
                       && ( Context.LanguageType >= LANGUAGE_TYPE.Css
@@ -1159,6 +2177,15 @@ class CODE
                 BeginToken( TOKEN_TYPE.BeginStringLiteral );
                 AddTokenCharacter( character );
                 EndToken();
+
+                Context.StringKind = STRING_KIND.DoubleQuote;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = false;
+                Context.InterpolationStyle =
+                    ( Context.LanguageType == LANGUAGE_TYPE.Dart ) ? INTERPOLATION_STYLE.Dart
+                    : ( Context.LanguageType == LANGUAGE_TYPE.Php ) ? INTERPOLATION_STYLE.Php
+                    : INTERPOLATION_STYLE.None;
 
                 BeginToken( TOKEN_TYPE.StringLiteral );
             }
@@ -1169,6 +2196,15 @@ class CODE
                 BeginToken( TOKEN_TYPE.BeginTextLiteral );
                 AddTokenCharacter( character );
                 EndToken();
+
+                Context.StringKind = STRING_KIND.Backtick;
+                Context.IsRawString = false;
+                Context.IsVerbatimString = false;
+                Context.IsMultilineString = true;
+                Context.InterpolationStyle =
+                    ( Context.LanguageType == LANGUAGE_TYPE.Js && IsJsxFileExtension() ) ? INTERPOLATION_STYLE.JsTemplate
+                    : ( Context.LanguageType == LANGUAGE_TYPE.Js ) ? INTERPOLATION_STYLE.JsTemplate
+                    : INTERPOLATION_STYLE.None;
 
                 BeginToken( TOKEN_TYPE.TextLiteral );
             }
@@ -1395,10 +2431,9 @@ class CODE
             {
                 AddTokenCharacter( character );
 
-                if ( ( character_2 == '-'
-                       || character_2 == '~'
-                       || character_2 == '!' )
-                     && Context.LanguageType != LANGUAGE_TYPE.Gs )
+                if ( character_2 == '-'
+                     || character_2 == '~'
+                     || character_2 == '!' )
                 {
                     EndToken();
                 }
@@ -1408,10 +2443,9 @@ class CODE
                 BeginToken( TOKEN_TYPE.Operator );
                 AddTokenCharacter( character );
 
-                if ( ( ( character_2 == '-' && character != '-' )
-                       || character_2 == '~'
-                       || character_2 == '!' )
-                     && Context.LanguageType != LANGUAGE_TYPE.Gs )
+                if ( ( character_2 == '-' && character != '-' )
+                     || character_2 == '~'
+                     || character_2 == '!' )
                 {
                     EndToken();
                 }
@@ -1888,7 +2922,7 @@ class CODE
 
     // ~~
 
-    void AddLines(
+    void SplitLines(
         )
     {
         long
@@ -2300,10 +3334,7 @@ class CODE
                                                      || token.LanguageType == LANGUAGE_TYPE.Php ) )
                                               || ( token.Text == "*"
                                                    && ( token.LanguageType == LANGUAGE_TYPE.Cpp
-                                                        || token.LanguageType == LANGUAGE_TYPE.D ) )
-                                              || ( ( token.Text == "?"
-                                                     || token.Text == "@" )
-                                                   && token.LanguageType == LANGUAGE_TYPE.Gs ) )
+                                                        || token.LanguageType == LANGUAGE_TYPE.D ) ) )
                                             && ( next_token.Type == TOKEN_TYPE.Identifier
                                                  || next_token.Text == "("
                                                  || next_token.Text == "[" ) ) )
@@ -2596,7 +3627,7 @@ class CODE
     void IndentTokenArray(
         )
     {
-        AddLines();
+        SplitLines();
         FindStatements();
         IndentLines();
         IndentStrings();
@@ -2668,7 +3699,8 @@ class CODE
 
 bool
     HasBackupFolder,
-    HasOutputFolder;
+    HasOutputFolder,
+    SplitOptionIsEnabled;
 string
     BackupFolderPath,
     OutputFolderPath;
@@ -2824,6 +3856,8 @@ void main(
     HasOutputFolder = false;
     OutputFolderPath = "";
 
+    SplitOptionIsEnabled = false;
+
     argument_array = argument_array[ 1 .. $ ];
 
     while ( argument_array.length >= 1
@@ -2851,6 +3885,10 @@ void main(
 
             argument_array = argument_array[ 1 .. $ ];
         }
+        else if ( option == "--split" )
+        {
+            SplitOptionIsEnabled = true;
+        }
         else
         {
             Abort( "Invalid option : " ~ option );
@@ -2871,6 +3909,7 @@ void main(
         writeln( "Usage :" );
         writeln( "    prettify [options] file_path_filter ..." );
         writeln( "Options :" );
+        writeln( "    --split" );
         writeln( "    --backup BACKUP_FOLDER/" );
         writeln( "    --output OUTPUT_FOLDER/" );
         writeln( "Examples :" );

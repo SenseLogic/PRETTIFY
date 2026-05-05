@@ -64,7 +64,15 @@ Prettifies all JavaScript files and store the fixed files in "OUTPUT_FOLDER/".
 ## Limitations
 
 - Tabs are systematically converted to four spaces.
-- The lexer does not support verbatim strings, raw string literals, interpolated strings and regular expressions.
+- The lexer is intentionally lightweight and therefore has limited support for the following literal forms:
+  - C#: verbatim strings `@\"...\"` (multiline) and interpolated strings `$\"...\"`, `$@\"...\"`, `@$\"...\"`
+  - D: raw/token strings `r\"...\"`, `q\"...\"`, delimited token strings `q{...}` (also `q(...)`, `q[...]`, `q<...>`)
+  - Dart: multiline triple-quoted strings `'''...'''`, `\"\"\"...\"\"\"` and raw strings `r'...'`, `r\"...\"`
+  - Rust: raw strings `r#\"...\"#` (any number of `#`)
+  - JS/TS: template literal interpolation `${...}`
+  - Dart/PHP: `$var` and `${...}` interpolation in supported string forms
+  - C#: `{...}` interpolation inside interpolated strings
+  - JSX/TSX: inline tags like `<Tag ...>`, `</Tag>`, `<Tag ... />`, fragments `<>...</>`, and member/namespaced tags like `<Foo.Bar>` / `<svg:path>`
 
 ## Version
 
